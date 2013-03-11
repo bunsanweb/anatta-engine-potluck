@@ -1,0 +1,16 @@
+{
+    "name": "potluck",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "test": "node ./node_modules/.bin/mocha"
+    },
+    "main": "./potluck",
+    "engines": {"node": ">=0.8.21"},
+    "dependencies": {
+        "anatta-engine": "git+ssh://k6.kanata-jp.com/home/ichiyama/projects/anatta-engine.git"
+    },
+    "devDependencies": {
+        "mocha": "*"
+    }
+}
