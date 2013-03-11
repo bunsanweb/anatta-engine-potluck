@@ -9,6 +9,8 @@ var engine = anatta.engine.builder.engine({
     space: {
         "orb:/": {field: "orb"},
         "src:/": {field: "file", root: "./src/", prefix: "/"},
+        "src:/shared/": {field: "file", root: anatta.shared(),
+                         prefix: "/shared/"},
         "root:/": {field: "file", root: "./ui/", prefix: "/"},
         "root:/posts/": {field: "agent", uri: "src:/posts.html"},
         "root:/formpost/": {field: "agent", uri: "src:/formpost.html"},
