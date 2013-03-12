@@ -23,6 +23,7 @@ var engine = anatta.engine.builder.engine({
                          prefix: "/shared/"},
         "actvities:": {field: "agent", uri: "src:/activities.html"},
         "orb:": {field: "orb"},
+        "config:/": {field: "file", root: "./config/", prefix: "/"},
     }
 });
 //var uri = "mongodb://localhost/potluck";
