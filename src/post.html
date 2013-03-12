@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="postTo" href="activities:/" />
+    <title>form post</title>
+    <script src="/shared/contrib/fusion.js"></script>
+    <script src="post.js"></script>
+  </head>
+  <body>
+    <article class="link">
+      <h1><a data-fusion="text: title, href: url" href="">page title</a></h1>
+      <div>tags:
+        <span data-fusion="when: tags, text: tags">tag1, tag2, ...</span>
+      </div>
+      <div>
+        <div>
+          <a data-fusion="href: identity, text: author" href="">author</a>
+          <span data-fusion="text: date">Mon, 11 Mar 2013 09:27:29 GMT</span>
+        </div>
+        <div data-fusion="html: comment">something...</div>
+      </div>
+    </article>
+  </body>
+</html>

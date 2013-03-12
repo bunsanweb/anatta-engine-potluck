@@ -6,7 +6,7 @@
         "test": "node ./node_modules/.bin/mocha"
     },
     "main": "./potluck",
-    "engines": {"node": ">=0.8.21"},
+    "engines": {"node": ">=0.10.0"},
     "dependencies": {
         "anatta-engine": "git+ssh://k6.kanata-jp.com/home/ichiyama/projects/anatta-engine.git"
     },
