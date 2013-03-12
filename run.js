@@ -19,6 +19,8 @@ var engine = anatta.engine.builder.engine({
         "http:": {field: "web"},
         "https:": {field: "web"},
         "src:/": {field: "file", root: "./src/", prefix: "/"},
+        "src:/shared/": {field: "file", root: anatta.shared(),
+                         prefix: "/shared/"},
         "actvities:": {field: "agent", uri: "src:/activities.html"},
         "orb:": {field: "orb"},
     }
