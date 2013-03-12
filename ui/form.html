@@ -8,12 +8,18 @@
   <body>
     <h1>Potluck post</h1>
     <div>
-      <div><label>URL: <input id="url" /></label></div>
-      <div><label>title: <input id="title" /></label></div>
-      <div><label>tag: <input id="tags" /></label></div>
+      <div><label>URL: 
+          <input id="url" value="http://example.com/" /></label></div>
+      <div><label>title: 
+          <input id="title" value="Example Domain" /></label></div>
+      <div><label>auther: <input id="author" value="potluck" /></label></div>
+      <div><label>identity: 
+          <input id="identity" value="http://localhost:8000/" /></label></div>
+      <div><label>tag: <input id="tags" value="web, domain" /></label></div>
       <div>
         <div><label for="comment">comment</label></div>
-        <div><textarea id="comment"></textarea></div>
+        <div><textarea id="comment">This domain is established to be used for 
+            illustrative examples in documents.</textarea></div>
       </div>
       <div>
         <button id="post">post</button>
