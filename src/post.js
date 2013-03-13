@@ -3,9 +3,20 @@
 // An agent for formatting formdata to "Link Post" HTML
 window.addEventListener("agent-load", function (ev) {
     var template = document.querySelector(".link");
-    var postLink = anatta.engine.link(
-        document.querySelector("[rel='postTo']"),
+    var configLink = anatta.engine.link(
+        document.querySelector("[rel=config]"),
         "text/html", anatta.entity);
+    
+    var postLink = null;
+    var postTo = function (message) {
+        if (postLink) return postLink.post(message);
+        //console.log(configLink.href());
+        return configLink.get().then(function (configEntity) {
+            postLink = configEntity.first({rel: "postTo"});
+            //console.log(postLink.href());
+            return postLink.post(message);
+        });
+    };
     
     var postByForm = function (ev) {
         var form = anatta.form.decode(ev.detail.request);
@@ -16,9 +27,9 @@ window.addEventListener("agent-load", function (ev) {
             },
             body: "<!doctype html>" + doc.outerHTML,
         };
-        console.log(form);
-        console.log(message.body);
-        return postLink.post(message).then(function (entity) {
+        //console.log(form);
+        //console.log(message.body);
+        return postTo(message).then(function (entity) {
             var uri = entity.request.uri;
             //console.log(uri);
             // TBD: 300 redirect or 201 created

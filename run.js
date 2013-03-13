@@ -26,6 +26,15 @@ var engine = anatta.engine.builder.engine({
         "config:/": {field: "file", root: "./config/", prefix: "/"},
     }
 });
+var termset = anatta.termset.desc.create({
+    "name": "potluck-config",
+    "uri-pattern": "^config:",
+    "content-type": "text/html",
+    "link": {
+        "rel": {"value": "rel"},
+    },
+});
+engine.glossary.add(termset);
 //var uri = "mongodb://localhost/potluck";
 //engine.space.maanager.fields["orb|orb:/"].orb = anatta.orb.mondodb.Orb(uri);
 var gate = anatta.webgate.core.WebGate(
