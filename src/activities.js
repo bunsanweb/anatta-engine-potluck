@@ -2,15 +2,15 @@
 
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
-    var config = anatta.engine.link(
-        document.querySelector("[rel='config']"), "text/html", anatta.entity);
     var orb = "";
     var url = anatta.builtin.url;
 
     var getOrb = function () {
         var d = anatta.q.defer();
         if (!orb) {
-            return config.get().then(function (entity) {
+            var config = document.querySelector("[rel='config']");
+            var link = anatta.engine.link(config, "text/html", anatta.entity);
+            return link.get().then(function (entity) {
                 orb = entity.html.querySelector("[rel='orb']").href;
                 return orb;
             });
@@ -20,7 +20,7 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var generateID = function () {
-        return "foobar";
+        return (Math.random() * 0x100000000).toString(16);
     };
 
     var putToOrb = function (ev, orb) {
