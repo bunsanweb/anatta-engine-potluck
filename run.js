@@ -12,7 +12,7 @@ var engine = anatta.engine.builder.engine({
         "root:/": {field: "file", root: "./ui/", prefix: "/"},
         "root:/post/": {field: "agent", uri: "src:/post.html"},
         "root:/author/": {field: "agent", uri: "src:/author.html"},
-        "root:/index/": {field: "agent", uri: "src:/link.html"},
+        "root:/index/": {field: "agent", uri: "src:/index.html"},
         "root:/link/": {field: "agent", uri: "src:/link.html"},
         "root:/tag/": {field: "agent", uri: "src:/tag.html"},
         
@@ -24,6 +24,9 @@ var engine = anatta.engine.builder.engine({
         "activities:": {field: "agent", uri: "src:/activities.html"},
         "orb:": {field: "orb"},
         "config:/": {field: "file", root: "./config/", prefix: "/"},
+        
+        // for development
+        "root:/activityList/": {field: "agent", uri: "src:/activityList.html"},
     }
 });
 var termset = anatta.termset.desc.create({
