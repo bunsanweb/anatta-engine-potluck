@@ -2,12 +2,41 @@
 
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
-    var index = anatta.engine.link(
-        document.querySelector("[rel='index']"),
-        "text/html", anatta.entity);
-    var postBase = document.querySelector("[rel='posts']").href;
+    var config = anatta.engine.link(
+        document.querySelector("[rel='config']"), "text/html", anatta.entity);
+    var orb = "";
+    var url = anatta.builtin.url;
+
+    var getOrb = function () {
+        var d = anatta.q.defer();
+        if (!orb) {
+            return config.get().then(function (entity) {
+                orb = entity.html.querySelector("[rel='orb']").href;
+                return orb;
+            });
+        }
+        d.resolve(orb);
+        return d.promise;
+    };
+
+    var generateID = function () {
+        return "foobar";
+    };
+
+    var putToOrb = function (ev, orb) {
+        var root = url.resolve(orb, "/");
+        var uri = url.resolve(root, generateID());
+        var link = anatta.engine.link({href: uri});
+        return link.put(ev.detail.request);
+    };
     
     var post = function (ev) {
+        getOrb().then(function (orb) {
+            return putToOrb(ev, orb);
+        }).then(function (entity) {
+            var res = entity.response;
+            ev.detail.respond(res.status, res.headers, res.text());
+        });
         // To be impl as
         // - generate id and PUT request to orb post
         // - update index
