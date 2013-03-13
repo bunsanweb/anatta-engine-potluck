@@ -30,10 +30,11 @@ window.addEventListener("agent-load", function (ev) {
         //console.log(form);
         //console.log(message.body);
         return postTo(message).then(function (entity) {
-            var uri = entity.request.uri;
+            var uri = entity.response.headers.location;
             //console.log(uri);
+            //console.log([entity.response.status, entity.response.headers]);
             // TBD: 300 redirect or 201 created
-            ev.detail.respond("300", {location: uri}, "");
+            ev.detail.respond("201", {location: uri}, "");
         });
     };
     var fixForm = function (form) {

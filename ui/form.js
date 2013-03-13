@@ -16,6 +16,7 @@ window.addEventListener("load", function (ev) {
         req.send(form);
     };
     var onLoad = function (ev) {
+        //alert(this.status);
         window.location.href = "/";
     };
     
