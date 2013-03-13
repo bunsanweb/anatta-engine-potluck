@@ -3,6 +3,7 @@
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
     var orb = "";
+    var template = document.querySelector(".link");
     var url = anatta.builtin.url;
 
     var getOrb = function () {
@@ -24,16 +25,58 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var putToOrb = function (ev, orb) {
-        var root = url.resolve(orb, "/");
+        var root = url.resolve(orb, "/activities/");
         var uri = url.resolve(root, generateID());
         var link = anatta.engine.link({href: uri});
         return link.put(ev.detail.request);
+    };
+
+    var createIndex = function (entity) {
+        var doc = document.implementation.createHTMLDocument("index");
+        var div = doc.createElement("div");
+        div.id = "links";
+        doc.body.appendChild(div);
+        return doc;
+    };
+
+    var toArticle = function (index, entity) {
+        var article = entity.html.querySelector(".link");
+        var obj = {
+            uri: url.parse(entity.request.href).pathname,
+            title: article.querySelector(".title").textContent,
+            tags: article.querySelector(".tags").textContent,
+            author: article.querySelector(".author").textContent,
+            date: article.querySelector(".date").textContent
+        };
+        return window.fusion(obj, template, index);
+    };
+
+    var updateIndex = function (entity) {
+        var uri = entity.request.href;
+        var link = anatta.engine.link({href: url.resolve(uri, "index.html")});
+        return link.get().then(function (indexEntity) {
+            var index = "";
+            if (indexEntity.response.status != "200") {
+                index = createIndex();
+            } else {
+                index = indexEntity.html;
+            }
+            var article = toArticle(index, entity);
+            var links = index.getElementById("links");
+            links.insertBefore(article, links.firstChild);
+            return link.put({
+                headers: {"content-type": "text/html"},
+                body: index.outerHTML
+            }).then(function (entity) {
+                return entity;
+            });
+        });
     };
     
     var post = function (ev) {
         getOrb().then(function (orb) {
             return putToOrb(ev, orb);
-        }).then(function (entity) {
+        }).then(updateIndex).then(function (entity) {
             var res = entity.response;
             ev.detail.respond(res.status, res.headers, res.text());
         });
