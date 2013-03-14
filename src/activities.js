@@ -2,6 +2,8 @@
 
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
+    var config = anatta.engine.link(
+        document.querySelector("[rel='config']"), "text/html", anatta.entity);
     var orb = "";
     var template = document.querySelector(".link");
     var url = anatta.builtin.url;
@@ -9,9 +11,7 @@ window.addEventListener("agent-load", function (ev) {
     var getOrb = function () {
         var d = anatta.q.defer();
         if (!orb) {
-            var config = document.querySelector("[rel='config']");
-            var link = anatta.engine.link(config, "text/html", anatta.entity);
-            return link.get().then(function (entity) {
+            return config.get().then(function (entity) {
                 orb = entity.html.querySelector("[rel='orb']").href;
                 return orb;
             });
@@ -51,10 +51,21 @@ window.addEventListener("agent-load", function (ev) {
         return window.fusion(obj, template, index);
     };
 
+    var toLocation = function (entity) {
+        var uri = entity.html.querySelector(".title").href;
+        return config.get().then(function (configEntity) {
+            var link = configEntity.html.querySelector("[rel='link']").href;
+            var root = url.parse(link).path;
+            var location = url.resolve(root, encodeURIComponent(uri));
+            return location;
+        });
+    };
+
     var updateIndex = function (entity) {
         var uri = entity.request.href;
-        var link = anatta.engine.link({href: url.resolve(uri, "index.html")});
-        return link.get().then(function (indexEntity) {
+        var indexUri = url.resolve(uri, "index.html");
+        var indexLink = anatta.engine.link({href: indexUri});
+        return indexLink.get().then(function (indexEntity) {
             var index = "";
             if (indexEntity.response.status != "200") {
                 index = createIndex();
@@ -64,11 +75,11 @@ window.addEventListener("agent-load", function (ev) {
             var article = toArticle(index, entity);
             var links = index.getElementById("links");
             links.insertBefore(article, links.firstChild);
-            return link.put({
+            return indexLink.put({
                 headers: {"content-type": "text/html"},
                 body: index.outerHTML
-            }).then(function (entity) {
-                return entity;
+            }).then(function (indexEntity) {
+                return toLocation(entity);
             });
         });
     };
@@ -76,9 +87,8 @@ window.addEventListener("agent-load", function (ev) {
     var post = function (ev) {
         getOrb().then(function (orb) {
             return putToOrb(ev, orb);
-        }).then(updateIndex).then(function (entity) {
-            var res = entity.response;
-            ev.detail.respond(res.status, res.headers, res.text());
+        }).then(updateIndex).then(function (location) {
+            ev.detail.respond("201", {location: location}, "");
         });
         // To be impl as
         // - generate id and PUT request to orb post
