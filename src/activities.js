@@ -31,7 +31,7 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var generateID = function () {
-        return (Math.random() * 0x100000000).toString(16);
+        return "activity-" + (Math.random() * 0x100000000).toString(16);
     };
 
     var putToOrb = function (request) {
@@ -52,12 +52,11 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var toArticle = function (index, entity) {
-        var path = entity.request.location.path.slice(base.length);
-        var id = "activity-" + path;
+        var id = entity.request.location.path.slice(base.length);
         var article = entity.html.querySelector(".link");
         var obj = {
             id: id,
-            uri: url.resolve(base, "?id=" + id),
+            uri: entity.request.href,
             src: article.querySelector(".title").href,
             title: article.querySelector(".title").textContent,
             tags: article.querySelector(".tags").textContent,
