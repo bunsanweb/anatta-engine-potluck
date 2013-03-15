@@ -5,10 +5,11 @@ window.addEventListener("agent-load", function (ev) {
         var conf = null;
         return function () {
             if (conf) return anatta.q.resolve(conf);
-            return anatta.engine.link(
+            var confLink = anatta.engine.link(
                 document.querySelector("[rel=config]"),
                 "text/html", anatta.entity
-            ).get().then(function (entity) {
+            );
+            return confLink.get().then(function (entity) {
                 conf = entity;
                 return conf;
             });
@@ -42,12 +43,17 @@ window.addEventListener("agent-load", function (ev) {
     var get = function (ev) {
         return getIndex().then(function (index) {
             // TBD
+            return ev.detail.respond(
+                "200", {"content-type": "text/html;charset=utf-8"},
+                "<doctype html>" + index.outerHTML);
         });
     };
     
     var updateIndex = function (index, activity) {
         // TBD
+        console.log(activity.outerHTML);
         
+        return index;
     };
     
     var getIndexLink = (function () {
@@ -66,7 +72,7 @@ window.addEventListener("agent-load", function (ev) {
                 if (entity.response.status === "200") return entity;
                 return putIndex(emptyIndex());
             }).then(function (entity) {
-                console.log(entity.html);
+                //console.log(entity.html.outerHTML);
                 return entity.html;
             });
         });
@@ -75,14 +81,14 @@ window.addEventListener("agent-load", function (ev) {
         return getIndexLink().then(function (indexLink) {
             var message = {
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: "<!doctype html>" + doc.outerHTML;
+                body: "<!doctype html>" + doc.outerHTML,
             };
             return indexLink.put(message);
         });
     };
     var emptyIndex = function () {
         var doc = document.implementation.createHTMLDocument("index");
-        doc.body.innerHTML = document.body.innerHTML;
+        doc.body.innerHTML = document.querySelector("#frame").innerHTML;
         return doc;
     };
     

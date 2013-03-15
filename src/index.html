@@ -3,12 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <title>index agent</title>
-    <link rel="config" href="config:" />
+    <link rel="config" href="config:/" />
     <script src="streamer.js"></script>
     <script src="index.js"></script>
   </head>
   <body>
-    <h1>Link Index</h1>
-    <main></main>
+    <div id="frame">
+      <h1>Link Index</h1>
+      <main></main>
+    </div>
+    <div id="article">
+      <article>
+        <h1><a data-fusion="href: link, text: title" href="/link/"></a></h1>
+        <div data-fusion="text: updated"></div>
+      </article>
+    </div>
   </body>
 </html>
