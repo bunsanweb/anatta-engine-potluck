@@ -2,12 +2,25 @@
 <html>
   <head>
     <title>link agent</title>
+    <script src="/shared/contrib/fusion.js"></script>
     <script src="streamer.js"></script>
     <script src="link.js"></script>
     <link rel="config" href="config:/">
+    <link rel="base" href="/link/">
   </head>
   <body>
     <h1>link agent</h1>
-    <a rel="store" href="store:/"></a>
+    <article class="link" data-fusion="id: id">
+      <div>tags: 
+        <span class="tags" data-fusion="when: tags, text: tags">tag1, tag2, ...</span>
+      </div>
+      <div>
+        <div>
+          <a class="author" data-fusion="href: identity, text: author" href="">author</a>
+          <span class="date" data-fusion="text: date">Mon, 11 Mar 2013 09:27:29 GMT</span>
+        </div>
+        <div class="comment" data-fusion="html: comment">something...</div>
+      </div>
+    </article>
   </body>
 </html>
