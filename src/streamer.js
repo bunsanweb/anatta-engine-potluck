@@ -18,6 +18,16 @@ var Streamer = (function () {
         });
     };
 
+    anatta.engine.glossary.add(anatta.termset.desc.create({
+        name: "stream",
+        "content-type": "text/html",
+        "uri-pattern": "^.*",
+        entity: {
+            refresh: {selector: "link[rel='refresh']", value: "href"},
+            backward: {selector: "link[rel='backward']", value: "href"},
+        }
+    }));
+
     Streamer.prototype.on = function (event, handler) {
         this.events[event] = handler || function () {};
         return this;
