@@ -1,84 +1,147 @@
 "use strict";
 window.addEventListener("agent-load", function (ev) {
-    var base = "/link/";
-    var config = anatta.engine.link(
-        document.querySelector("[rel='config']"), "text/html", anatta.entity);
-    var orb = "";
+    var base = document.querySelector("[rel='base']").href;
+    var template = document.querySelector(".link");
     var url = anatta.builtin.url;
 
-    var getOrb = function () {
-        var d = anatta.q.defer();
-        if (!orb) {
-            return config.get().then(function (entity) {
+    var getConf = (function () {
+        var conf = null;
+        return function () {
+            if (conf) return anatta.q.resolve(conf);
+            var link = anatta.engine.link(
+                document.querySelector("[rel='config']"),
+                "text/html", anatta.entity);
+            return link.get().then(function (entity) {
+                conf = entity;
+                return conf;
+            });
+        };
+    })();
+
+    var resolveOrb = (function () {
+        var orb = null;
+        return function (uri) {
+            var path = url.resolve(base, uri);
+            if (orb) return anatta.q.resolve(url.resolve(orb, path));
+            return getConf().then(function (entity) {
                 orb = entity.html.querySelector("[rel='orb']").href;
-                return orb;
+                return url.resolve(orb, path);
             });
-        }
-        d.resolve(orb);
-        return d.promise;
-    };
+        };
+    })();
 
-    var getUri = function (request) {
-        var path = request.location.path;
-        return path.slice(path.indexOf(base) + base.length);
-    };
-
-    var createCache = function (uri) {
-        var uri_ = decodeURIComponent(uri);
-        var indexUri = orb + "/activities/index.html";
-        var indexLink = anatta.engine.link({href: indexUri});
-        return indexLink.get().then(function (entity) {
-            var target = "";
-            var links = entity.html.querySelectorAll(".link");
-            Array.prototype.some.call(links, function (link) {
-                if (link.querySelector(".src").href == uri_) {
-                    target = link;
-                    return true;
+    var refresh = (function () {
+        var streamer = null;
+        return function () {
+            return getConf().then(function (conf) {
+                if (streamer) {
+                    streamer.get("refresh")();
+                } else {
+                    var uri = conf.first({rel: "activities"}).href();
+                    streamer = new Streamer(uri);
+                    streamer.on("insert", insert);
+                    streamer.on("refresh", function (updated) {
+                        return setTimeout(streamer.get("refresh"),
+                            updated ? 500 : 5000);
+                    });
+                    streamer.get("load")();
                 }
+                return streamer;
             });
-            return target;
-        }).then(function (target) {
-            var targetUri = target.querySelector(".href").href;
-            var targetLink = anatta.engine.link({href: targetUri});
-            return targetLink.get();
-        }).then(function (entity) {
-            var cacheUri = orb + "/link/" + uri;
+        };
+    })();
+
+    var createCache = function (activity) {
+        var src = activity.querySelector(".src");
+        src.textContent = activity.querySelector(".title").textContent;
+        var doc = document.implementation.createHTMLDocument(src.textContent);
+        var h1 = doc.createElement("h1");
+        h1.appendChild(doc.importNode(src, true));
+        doc.body.appendChild(h1);
+        var div = doc.createElement("div");
+        div.id = "activities";
+        doc.body.appendChild(div);
+        return doc;
+    };
+
+    var getCache = function (activity) {
+        var uri = activity.querySelector(".src").href;
+        var uri_ = encodeURIComponent(uri);
+        return resolveOrb(uri_).then(function (cacheUri) {
+            return anatta.engine.link({href: cacheUri}).get();
+        }).then(function (cache) {
+            var status = cache.response.status;
+            var cache = status == "200" ? cache.html : createCache(activity);
+            return [activity, cache];
+        });
+    };
+
+    var updateCache = function (activity, cache) {
+        var href = activity.querySelector(".href");
+        var link = anatta.engine.link(href, "text/html", anatta.entity);
+        return link.get().then(function (entity) {
+            var doc = entity.html;
+            var obj = {
+                id: activity.id,
+                tags: doc.querySelector(".tags").textContent,
+                author: doc.querySelector(".author").textContent,
+                identity: doc.querySelector(".author").href,
+                date: doc.querySelector(".date").textContent,
+                comment: doc.querySelector(".comment").innerHTML
+            };
+            var content = window.fusion(obj, template, cache);
+            var activities = cache.getElementById("activities");
+            activities.appendChild(cache.importNode(content, true));
+            return [activity, cache];
+        });
+    };
+
+    var putCache = function (activity, cache) {
+        var uri = activity.querySelector(".src").href;
+        var uri_ = encodeURIComponent(uri);
+        return resolveOrb(uri_).then(function (cacheUri) {
             var cacheLink = anatta.engine.link({href: cacheUri});
-            return cacheLink.put(entity.response);
+            return cacheLink.put({
+                headers: {"content-type": "text/html"},
+                body: cache.outerHTML
+            });
         });
     };
 
-    var get = function (ev, orb) {
-        var uri = getUri(ev.detail.request);
-        var link = anatta.engine.link({href: orb + url.resolve(base, uri)});
-        link.get().then(function (entity) {
-            var status = entity.response.status;
-            return status == "200" ? entity : createCache(uri);
+    var insert = function (activity) {
+        return getCache(activity).spread(updateCache).spread(putCache);
+    };
+
+    var get = function (ev) {
+        var path = ev.detail.request.location.path;
+        var uri = path.slice(path.indexOf(base) + base.length);
+        return resolveOrb(uri).then(function (cacheUri) {
+            var cacheLink = anatta.engine.link({href: cacheUri});
+            return cacheLink.get();
         }).then(function (entity) {
-            ev.detail.respond("200", {
+            var res = entity.response;
+            if (res.status == 200) {
+                ev.detail.respond(res.status, res.headers, res.text());
+            } else {
+                ev.detail.respond("404", {
+                    "content-type": "text/html;charset=utf-8"
+                }, "not found activities for " + decodeURIComponent(uri));
+            }
+        }).fail(function (err) {
+            ev.detail.respond("500", {
                 "content-type": "text/html;charset=utf-8"
-            }, entity.response.text());
-        }, function (err) {
-            ev.detail.respond("404", {
-                "content-type": "text/html;charset=utf-8"
-            }, "not found: " + uri);
+            }, "something wrong ...\n\n: " + err);
         });
-    };
-
-    var post = function (ev, orb) {
-        ev.detail.respond("200", {
-            "content-type": "text/html;charset=utf-8"
-        }, "link agent");
     };
 
     window.addEventListener("agent-access", function (ev) {
         ev.detail.accept();
-        getOrb().then(function (orb) {
-            switch (ev.detail.request.method) {
-            case "GET": return get(ev, orb);
-            case "POST": return post(ev, orb);
-            default: return ev.detail.respond("405", {allow: "GET,POST"}, "");
+        refresh().then(function (streamer) {
+            if (ev.detail.request.method == "GET") {
+                return get(ev);
             }
+            return ev.detail.respond("405", {allow: "GET"}, "");
         });
     }, false);
+    refresh();
 }, false);
