@@ -7,15 +7,18 @@ window.addEventListener("load", function (ev) {
     var indexUri = "/index/";
     var query = "main";
     
-    var req = new XMLHttpRequest();
-    req.addEventListener("load", function (ev) {
-        var doc = document.implementation.createHTMLDocument("");
-        doc.documentElement.innerHTML = this.responseText;
-        var listPart = doc.querySelector(query);
-        if (listPart) {
-            main.innerHTML = listPart.innerHTML;
-        }
-    }, false);
-    req.open("GET", indexUri, true);
-    req.send();
+    setInterval(function () {
+        var req = new XMLHttpRequest();
+        req.addEventListener("load", function (ev) {
+            var doc = document.implementation.createHTMLDocument("");
+            doc.documentElement.innerHTML = this.responseText;
+            var listPart = doc.querySelector(query);
+            if (listPart) {
+                main.innerHTML = listPart.innerHTML;
+            }
+        }, false);
+        req.open("GET", indexUri, true);
+        req.setRequestHeader("Cache-Control", "no-cache");
+        req.send();
+    }, 500);
 }, false);
