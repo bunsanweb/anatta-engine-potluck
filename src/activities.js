@@ -2,30 +2,40 @@
 
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
-    var base = "/activities/";
-    var config = anatta.engine.link(
-        document.querySelector("[rel='config']"), "text/html", anatta.entity);
-    var orb = "";
+    var base = document.querySelector("[rel='base']").href;
+    var indexPath = document.querySelector("[rel='index']").href;
     var template = document.querySelector(".link");
     var url = anatta.builtin.url;
     var NUM = 5;
 
-    var getOrb = function () {
-        var d = anatta.q.defer();
-        if (!orb) {
-            return config.get().then(function (entity) {
-                orb = entity.html.querySelector("[rel='orb']").href;
-                return orb;
+    var getConf = (function () {
+        var conf = null;
+        return function () {
+            if (conf) return anatta.q.resolve(conf);
+            var link = anatta.engine.link(
+                document.querySelector("[rel='config']"),
+                "text/html", anatta.entity);
+            return link.get().then(function (entity) {
+                conf = entity;
+                return conf;
             });
-        }
-        d.resolve(orb);
-        return d.promise;
-    };
+        };
+    })();
+
+    var resolveOrb = (function () {
+        var orb = null;
+        return function (uri) {
+            var path = url.resolve(base, uri);
+            if (orb) return anatta.q.resolve(url.resolve(orb, path));
+            return getConf().then(function (entity) {
+                orb = entity.html.querySelector("[rel='orb']").href;
+                return url.resolve(orb, path);
+            });
+        };
+    })();
 
     var getIndex = function () {
-        return getOrb().then(function (orb) {
-            var indexPath = url.resolve(base, "index.html");
-            var indexUri = url.resolve(orb, indexPath);
+        return resolveOrb(indexPath).then(function (indexUri) {
             return anatta.engine.link({href: indexUri}).get();
         });
     };
@@ -35,11 +45,9 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var putToOrb = function (request) {
-        return getOrb().then(function (orb) {
-            var root = url.resolve(orb, base);
-            var uri = url.resolve(root, generateID());
-            var link = anatta.engine.link({href: uri});
-            return link.put(request);
+        var id = generateID();
+        return resolveOrb(id).then(function (uri) {
+            return anatta.engine.link({href: uri}).put(request);
         });
     };
 
