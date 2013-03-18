@@ -4,18 +4,26 @@
     <meta charset="utf-8" />
     <title>index agent</title>
     <link rel="config" href="config:/" />
+    <script src="/shared/contrib/fusion.js"></script>
     <script src="streamer.js"></script>
     <script src="index.js"></script>
   </head>
   <body>
     <div id="frame">
-      <h1>Link Index</h1>
+      <h1>Whats new</h1>
       <main></main>
     </div>
     <div id="article">
-      <article>
-        <h1><a data-fusion="href: link, text: title" href="/link/"></a></h1>
-        <div data-fusion="text: updated"></div>
+      <article class="link">
+        <h1><a data-fusion="href: view, text: title" href="/link/">
+            title</a></h1>
+        <div>
+          tag: <span class="tag" data-fusion="text: tags">web, site</span>
+        </div>
+        <div>
+          <span class="updated" data-fusion="text: updated"
+                >Mon, 18 Mar 2013 06:18:00 GMT</span>
+        </div>
       </article>
     </div>
   </body>
