@@ -51,6 +51,13 @@ window.addEventListener("agent-load", function (ev) {
         };
     })();
 
+    var queue = anatta.q.resolve(null);
+    var insert = function (activity) {
+        queue = queue.then(function () {
+            return getCache(activity).spread(updateCache).spread(putCache);
+        });
+    };
+
     var createCache = function (activity) {
         var src = activity.querySelector(".src");
         src.textContent = activity.querySelector(".title").textContent;
@@ -106,10 +113,6 @@ window.addEventListener("agent-load", function (ev) {
                 body: cache.outerHTML
             });
         });
-    };
-
-    var insert = function (activity) {
-        return getCache(activity).spread(updateCache).spread(putCache);
     };
 
     var get = function (ev) {
