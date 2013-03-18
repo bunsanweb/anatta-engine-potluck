@@ -2,6 +2,8 @@
 
 window.addEventListener("load", function (ev) {
     var doPost = function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
         var postUri = "/post/";
         var form = new FormData();
         form.append("url", document.getElementById("url").value);
@@ -16,8 +18,9 @@ window.addEventListener("load", function (ev) {
         req.send(form);
     };
     var onLoad = function (ev) {
-        //alert(this.status);
-        window.location.href = "/";
+        setTimeout(function () {
+            window.location.href = "/";
+        }, 500);
     };
     
     document.getElementById("post").addEventListener("click", doPost, false);
