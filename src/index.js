@@ -215,8 +215,10 @@ var View = {
             var entries = index.querySelectorAll("article.link");
             for (var i = 0; i < entries.length; i++) {
                 var entry = entries[i];
-                var id = entry.querySelector("a").getAttribute("href");
+                var id = decodeURIComponent(
+                    entry.querySelector("a").getAttribute("href"));
                 if (id === refresh) {
+                    // exclude refresh entry
                     var start = Math.max(0, id - count);
                     var list = Array.prototype.slice.call(entries, start, i);
                     return render(ev, list);
@@ -232,8 +234,10 @@ var View = {
             var entries = index.querySelectorAll("article.link");
             for (var i = 0; i < entries.length; i++) {
                 var entry = entries[i];
-                var id = entry.querySelector("a").getAttribute("href");
+                var id = decodeURIComponent(
+                    entry.querySelector("a").getAttribute("href"));
                 if (id === backward) {
+                    // inlude backward entry
                     var list = Array.prototype.slice.call(
                         entries, i, i + count);
                     return render(ev, list);
