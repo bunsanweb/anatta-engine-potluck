@@ -32,7 +32,15 @@ window.addEventListener("agent-load", function (ev) {
         return Index.get().then(function (index) {
             var view = View.get(ev, index);
             return ev.detail.respond(
-                "200", {"content-type": "text/html;charset=utf-8"},
+                "200", {
+                    "content-type": "text/html;charset=utf-8",
+                    // for demo
+                    "cache-control": [
+                        "no-store", "no-cache",
+                        "max-age=0", "must-revalidate"].join(", "),
+                    "expires": new Date(0).toUTCString(),
+                    "pragma": "no-cache",
+                },
                 "<doctype html>" + view.outerHTML);
         });
         //});

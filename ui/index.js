@@ -18,7 +18,7 @@ window.addEventListener("load", function (ev) {
             }
         }, false);
         req.open("GET", indexUri, true);
-        req.setRequestHeader("Cache-Control", "no-cache");
+        req.setRequestHeader("cache-control", "no-cache, no-store");
         req.send();
     }, 500);
 }, false);
