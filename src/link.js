@@ -24,7 +24,7 @@ window.addEventListener("agent-load", function (ev) {
             var path = url.resolve(base, uri);
             if (orb) return anatta.q.resolve(url.resolve(orb, path));
             return getConf().then(function (entity) {
-                orb = entity.html.querySelector("[rel='orb']").href;
+                orb = entity.first({rel: "orb"}).href();
                 return url.resolve(orb, path);
             });
         };
