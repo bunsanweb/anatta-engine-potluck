@@ -1,5 +1,7 @@
 "use strict";
 
+process.chdir(require("path").dirname(module.filename));
+
 var anatta = require("anatta-engine");
 
 var engine = anatta.engine.builder.engine({
