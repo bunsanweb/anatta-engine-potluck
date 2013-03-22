@@ -25,7 +25,7 @@ window.addEventListener("load", function (ev) {
             "url=" + encodeURIComponent(url) + "&" +
             "tags=" + encodeURIComponent(tags.join(", ")) + "&" +
             "comment=" + encodeURIComponent(quote);
-        window.location.href = href;
+        window.open(href);
     };
     var bookmarkletCode = function () {
         var formUrl = location.href.replace(/#.*$/, "");
