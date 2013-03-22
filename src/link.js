@@ -110,7 +110,7 @@ window.addEventListener("agent-load", function (ev) {
         return resolveOrb(uri_).then(function (cacheUri) {
             var cacheLink = anatta.engine.link({href: cacheUri});
             return cacheLink.put({
-                headers: {"content-type": "text/html"},
+                headers: {"content-type": "text/html;charset=utf-8"},
                 body: cache.outerHTML
             });
         });

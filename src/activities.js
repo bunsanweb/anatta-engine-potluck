@@ -87,7 +87,7 @@ window.addEventListener("agent-load", function (ev) {
             var links = index.getElementById("links");
             links.insertBefore(article, links.firstChild);
             return indexEntity.put({
-                headers: {"content-type": "text/html"},
+                headers: {"content-type": "text/html;charset=utf-8"},
                 body: index.outerHTML
             }).then(function (indexEntity) {
                 return article.querySelector(".href").href;
