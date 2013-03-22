@@ -88,9 +88,10 @@ window.addEventListener("agent-load", function (ev) {
         var link = anatta.engine.link(href, "text/html", anatta.entity);
         return link.get().then(function (entity) {
             var doc = entity.html;
+            var tags = doc.querySelector(".tags");
             var obj = {
                 id: activity.id,
-                tags: doc.querySelector(".tags").textContent,
+                tags: tags ? tags.textContent : "",
                 author: doc.querySelector(".author").textContent,
                 identity: doc.querySelector(".author").href,
                 date: doc.querySelector(".date").textContent,

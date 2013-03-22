@@ -62,12 +62,13 @@ window.addEventListener("agent-load", function (ev) {
     var toArticle = function (index, entity) {
         var id = entity.request.location.path.slice(base.length);
         var article = entity.html.querySelector(".link");
+        var tags = article.querySelector(".tags");
         var obj = {
             id: id,
             uri: entity.request.href,
             src: article.querySelector(".title").href,
             title: article.querySelector(".title").textContent,
-            tags: article.querySelector(".tags").textContent,
+            tags: tags ? tags.textContent : "",
             author: article.querySelector(".author").textContent,
             date: article.querySelector(".date").textContent
         };
