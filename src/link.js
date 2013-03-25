@@ -54,7 +54,10 @@ window.addEventListener("agent-load", function (ev) {
     var queue = anatta.q.resolve(null);
     var insert = function (activity) {
         queue = queue.then(function () {
-            return getCache(activity).spread(updateCache).spread(putCache);
+            return getCache(activity).spread(updateCache).spread(
+                function (activity, cache, updated) {
+                    return updated ? putCache(activity, cache) : "";
+                });
         });
     };
 
@@ -84,6 +87,8 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var updateCache = function (activity, cache) {
+        var activityExist = cache.getElementById(activity.id);
+        if (activityExist) return [activity, cache, false];
         var href = activity.querySelector(".href");
         var link = anatta.engine.link(href, "text/html", anatta.entity);
         return link.get().then(function (entity) {
@@ -100,7 +105,7 @@ window.addEventListener("agent-load", function (ev) {
             var content = window.fusion(obj, template, cache);
             var activities = cache.getElementById("activities");
             activities.appendChild(cache.importNode(content, true));
-            return [activity, cache];
+            return [activity, cache, true];
         });
     };
 
