@@ -120,26 +120,21 @@ var Index = {
     updateEntry: (function () {
         var updateEntry = function (index, view, entry) {
             entry = mergeOldEntry(index, view, entry);
-            insertEntry(index, entry);
+            if (entry) insertEntry(index, entry);
             return index;
         };
         var mergeOldEntry = function (index, view, entry) {
-            var entries = index.querySelectorAll("article.link");
-            for (var i = 0; i < entries.length; i++) {
-                var cur = entries[i];
-                var cview = cur.querySelector("a").getAttribute("href");
-                if (view === cview) {
-                    var updated = entry.querySelector(".updated").textContent;
-                    var cupdated = cur.querySelector(".updated").textContent;
-                    var isNewer = Util.dateLessThan(cupdated, updated);
-                    var newer = isNewer ? entry : cur;
-                    var older = isNewer ? cur: entry;
-                    var tags = older.querySelector(".tag").textContent;
-                    tagMerge(newer.querySelector(".tag"), tags);
-                    cur.parentNode.removeChild(cur);
-                    return newer;
-                }
-            }
+            var existed = index.querySelector("article#" + entry.id);
+            if (!existed) return entry;
+            var dateEntry = entry.querySelector(".updated").textContent;
+            var dateExisted = existed.querySelector(".updated").textContent;
+            var isNewer = Util.dateLessThan(dateExisted, dateEntry);
+            var newer = isNewer ? entry : existed;
+            var older = isNewer ? existed: entry;
+            var tags = older.querySelector(".tag").textContent;
+            tagMerge(newer.querySelector(".tag"), tags);
+            if (!isNewer) return null;
+            existed.parentNode.removeChild(existed);
             return entry;
         };
         var insertEntry = function (index, entry) {
@@ -178,13 +173,21 @@ var Activity = {
             });
         };
         
+        var idFromUri = function (uri) {
+            var head = "link-";
+            return head + Array.prototype.slice.call(uri).map(function (ch) {
+                return ch.charCodeAt(0).toString(16);
+            }).join("");
+        };
+        
         var entryData = function (conf, activity) {
             var linkBase = conf.first({
                 rel: "linkBase"}).html.getAttribute("href");
             var url = activity.querySelector(".src").href;
             var view = linkBase + encodeURIComponent(url);
+            var id = idFromUri(url);
             return {
-                id: activity.id,
+                id: id,
                 url: url,
                 view: view,
                 title: activity.querySelector(".title").textContent,
