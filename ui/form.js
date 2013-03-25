@@ -43,8 +43,9 @@ window.addEventListener("load", function (ev) {
     };
     
     var loadContentFromHash = function () {
-        if (!location.hash) return;
-        var kvs = location.hash.substring(1);
+        var hashPos = location.href.indexOf("#");
+        if (hashPos < 0) return;
+        var kvs = location.href.substring(hashPos + 1);
         kvs.split(/&/).forEach(function (kv) {
             var index = kv.indexOf("=");
             var key = kv.substring(0, index);

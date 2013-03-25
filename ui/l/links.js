@@ -1,8 +1,9 @@
 "use strict";
 
 window.addEventListener("load", function (ev) {
-    if (!location.hash) return location.href = "/";
-    var uri = "/link/" + location.hash.substring(1);
+    var hashPos = location.href.indexOf("#");
+    if (hashPos < 0) return location.href = "/";
+    var uri = "/link/" + location.href.substring(hashPos + 1);
     
     var load = function (uri) {
         var req = new XMLHttpRequest();
