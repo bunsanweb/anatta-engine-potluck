@@ -41,7 +41,8 @@ window.addEventListener("agent-load", function (ev) {
                     "expires": new Date(0).toUTCString(),
                     "pragma": "no-cache",
                 },
-                "<doctype html>" + view.outerHTML);
+                "<!doctype html>" + view.outerHTML);
+                //view.outerHTML);
         });
         //});
     };
