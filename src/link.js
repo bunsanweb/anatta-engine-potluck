@@ -1,7 +1,8 @@
 "use strict";
 window.addEventListener("agent-load", function (ev) {
     var base = document.querySelector("[rel='base']").href;
-    var template = document.querySelector(".link");
+    var cacheTemplate = document.querySelector(".cache");
+    var commentTemplate = document.querySelector(".comment");
     var url = anatta.builtin.url;
 
     var getConf = (function () {
@@ -62,12 +63,10 @@ window.addEventListener("agent-load", function (ev) {
         var src = activity.querySelector(".src");
         src.textContent = activity.querySelector(".title").textContent;
         var doc = document.implementation.createHTMLDocument(src.textContent);
-        var h1 = doc.createElement("h1");
-        h1.appendChild(doc.importNode(src, true));
-        doc.body.appendChild(h1);
-        var div = doc.createElement("div");
-        div.id = "activities";
-        doc.body.appendChild(div);
+        var cache = doc.importNode(cacheTemplate, true);
+        var cacheTitle = cache.querySelector(".title");
+        cacheTitle.appendChild(doc.importNode(src, true));
+        doc.body.innerHTML = cache.innerHTML;
         return doc;
     };
 
@@ -83,6 +82,19 @@ window.addEventListener("agent-load", function (ev) {
         });
     };
 
+    var updateCacheTags = function (cache, tags) {
+        if (!tags) return;
+        var obj = {};
+        var cacheTags = cache.querySelector(".tags");
+        [cacheTags, tags].forEach(function (tags) {
+            var tagText = tags.textContent;
+            if (tagText) tagText.split(",").forEach(function (tag) {
+                if (tag) obj[tag.trim()] = "";
+            });
+        });
+        cacheTags.textContent = Object.keys(obj).sort().join(", ");
+    };
+
     var updateCache = function (activity, cache) {
         var activity_ = cache.getElementById(activity.id);
         if (!!activity_) return [activity, cache, false];
@@ -91,6 +103,7 @@ window.addEventListener("agent-load", function (ev) {
         return link.get().then(function (entity) {
             var doc = entity.html;
             var tags = doc.querySelector(".tags");
+            updateCacheTags(cache, tags);
             var obj = {
                 id: activity.id,
                 tags: tags ? tags.textContent : "",
@@ -99,9 +112,10 @@ window.addEventListener("agent-load", function (ev) {
                 date: doc.querySelector(".date").textContent,
                 comment: doc.querySelector(".comment").innerHTML
             };
+            var template = commentTemplate.cloneNode(true);
             var content = window.fusion(obj, template, cache);
-            var activities = cache.getElementById("activities");
-            activities.appendChild(cache.importNode(content, true));
+            var comments = cache.querySelector("#comments");
+            comments.appendChild(cache.importNode(content, true));
             return [activity, cache, true];
         });
     };
@@ -132,7 +146,7 @@ window.addEventListener("agent-load", function (ev) {
             } else {
                 ev.detail.respond("404", {
                     "content-type": "text/html;charset=utf-8"
-                }, "not found activities for " + decodeURIComponent(uri));
+                }, "there is no comment for " + decodeURIComponent(uri));
             }
         }).fail(function (err) {
             ev.detail.respond("500", {

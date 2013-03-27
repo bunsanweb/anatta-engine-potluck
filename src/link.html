@@ -10,17 +10,28 @@
   </head>
   <body>
     <h1>link agent</h1>
-    <article class="link" data-fusion="id: id">
-      <div>tags: 
+    <article class="cache">
+      <h1><a href="/">Potluck</a></h1>
+      <div>
+        <a href="/form.html">post form</a> |
+        <a href="/activities.html">activity list</a>
+      </div>
+      <hr>
+      <article class="link">
+        <h1 class="title"></h1>
+        <div>tag: <span class="tags"></span></div>
+        <div id="comments"></div>
+      </article>
+    </article>
+    <article class="comment" data-fusion="id: id">
+      <div>
+        <a class="author" data-fusion="href: identity, text: author" href="">author</a>
+        <span class="date" data-fusion="text: date">Mon, 11 Mar 2013 09:27:29 GMT</span>
+      </div>
+      <div>tag: 
         <span class="tags" data-fusion="when: tags, text: tags">tag1, tag2, ...</span>
       </div>
-      <div>
-        <div>
-          <a class="author" data-fusion="href: identity, text: author" href="">author</a>
-          <span class="date" data-fusion="text: date">Mon, 11 Mar 2013 09:27:29 GMT</span>
-        </div>
-        <div class="comment" data-fusion="html: comment">something...</div>
-      </div>
+      <div class="comment" data-fusion="html: comment">something...</div>
     </article>
   </body>
 </html>
