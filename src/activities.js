@@ -60,19 +60,25 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var toArticle = function (index, entity) {
-        var id = entity.request.location.path.slice(base.length);
-        var article = entity.html.querySelector(".link");
-        var tags = article.querySelector(".tags");
-        var obj = {
-            id: id,
-            uri: entity.request.href,
-            src: article.querySelector(".title").href,
-            title: article.querySelector(".title").textContent,
-            tags: tags ? tags.textContent : "",
-            author: article.querySelector(".author").textContent,
-            date: article.querySelector(".date").textContent
-        };
-        return window.fusion(obj, template, index);
+        return getConf().then(function (conf) {
+            var id = entity.request.location.path.slice(base.length);
+            var article = entity.html.querySelector(".link");
+            var tags = article.querySelector(".tags");
+            var root = conf.first({rel: "activities"}).href();
+            var uriObj = Object.create(
+                url.parse(root, true, true),
+                {query: {value: {id: id}}});
+            var obj = {
+                id: id,
+                uri: url.format(uriObj),
+                src: article.querySelector(".title").href,
+                title: article.querySelector(".title").textContent,
+                tags: tags ? tags.textContent : "",
+                author: article.querySelector(".author").textContent,
+                date: article.querySelector(".date").textContent
+            };
+            return window.fusion(obj, template, index);
+        });
     };
 
     var updateIndex = function (entity) {
@@ -83,7 +89,8 @@ window.addEventListener("agent-load", function (ev) {
             } else {
                 index = indexEntity.html;
             }
-            var article = toArticle(index, entity);
+            return [indexEntity, index, toArticle(index, entity)];
+        }).spread(function (indexEntity, index, article) {
             var links = index.getElementById("links");
             links.insertBefore(article, links.firstChild);
             return indexEntity.put({
@@ -131,7 +138,11 @@ window.addEventListener("agent-load", function (ev) {
                     return slice.slice(1);
                 default:
                     if (pivot) {
-                        return [pivot];
+                        return resolveOrb(query.id).then(function (uri) {
+                            return anatta.engine.link({href: uri}).get();
+                        }).then(function (entity) {
+                            return [entity.html.querySelector(".link")];
+                        });
                     } else {
                         return activitySlice(links.firstChild, NUM, true);
                     }
