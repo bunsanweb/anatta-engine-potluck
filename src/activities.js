@@ -140,10 +140,10 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var formatUri = function (location, on, elem) {
-        var base = location.protocol + "//" + location.host + location.pathname;
         var id = elem ? elem.id : location.query.id;
         var search = id ? "?on=" + on + "&id=" + id : "";
-        return base + search;
+        var obj = Object.create(location, {search: {value: search}});
+        return url.format(obj);
     };
 
     var formatDocument = function (activities, location) {
