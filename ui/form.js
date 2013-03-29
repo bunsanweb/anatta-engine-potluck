@@ -56,6 +56,17 @@ window.addEventListener("load", function (ev) {
         });
     };
     
+    var loadId = function () {
+        var identity = window.localStorage.getItem("identity");
+        var author = window.localStorage.getItem("author");
+        if (identity) inputs.identity.value = identity;
+        if (author) inputs.author.value = author;
+    };
+    var storeId = function () {
+        window.localStorage.setItem("identity", inputs.identity.value);
+        window.localStorage.setItem("author", inputs.author.value);
+    };
+
     var doPost = function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
@@ -70,6 +81,7 @@ window.addEventListener("load", function (ev) {
         req.send(form);
     };
     var onLoad = function (ev) {
+        storeId();
         setTimeout(function () {
             window.location.href = "/";
         }, 300);
@@ -79,6 +91,7 @@ window.addEventListener("load", function (ev) {
     var bookmarkletLink = document.querySelector("#bookmarklet");
     if (bookmarkletLink) bookmarkletLink.href = bookmarkletCode();
     loadContentFromHash();
+    loadId();
     window.addEventListener("hashchange", loadContentFromHash, false);
     document.getElementById("post").addEventListener("click", doPost, false);
 }, false);
