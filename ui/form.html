@@ -4,28 +4,44 @@
     <meta charset="utf-8" />
     <title>potluck post</title>
     <script src="form.js"></script>
+    <link rel="stylesheet" type="text/css" href="/style.css">
   </head>
   <body>
-    <h1>Potluck post</h1>
-    <div>
-      <div><label>URL: 
-          <input id="url" value="http://example.com/" /></label></div>
-      <div><label>title: 
-          <input id="title" value="Example Domain" /></label></div>
-      <div><label>auther: <input id="author" value="potluck" /></label></div>
-      <div><label>identity: 
-          <input id="identity" value="http://localhost:8000/" /></label></div>
-      <div><label>tag: <input id="tags" value="web, domain" /></label></div>
+    <h1><a href="/">Potluck</a></h1>
       <div>
-        <div><label for="comment">comment</label></div>
-        <div><textarea id="comment">This domain is established to be used for 
-            illustrative examples in documents.</textarea></div>
+        post form |
+        <a href="/activities.html">activity list</a>
       </div>
-      <div>
-        <button id="post" type="button">post</button>
-      </div>
-    </div>
-    <hr />
+      <hr>
+    <ul>
+      <li>
+        <label for="url">URL</label>
+        <input id="url" size="48" value="http://example.com/">
+      </li>
+      <li>
+        <label for="title">title</label>
+        <input id="title" size="48" value="Example Domain">
+      </li>
+      <li>
+        <label for="author">author</label>
+        <input id="author" size="48" value="potluck">
+      </li>
+      <li>
+        <label for="identity">identity</label>
+        <input id="identity" size="48" value="http://localhost:8000/">
+      </li>
+      <li>
+        <label for="tags">tag</label>
+        <input id="tags" size="48" value="web, domain">
+      </li>
+      <li>
+        <label for="comment">comment</label>
+        <textarea id="comment" rows="6" cols="48">This domain is established to be used for 
+          illustrative examples in documents.</textarea>
+      </li>
+    </ul>
+    <div><button id="post" type="button">post</button></div>
+    <hr>
     <div>
       (bookmarklet: <a id="bookmarklet" href="" 
           title="drag to your bookmark bar">post to potluck</a>)
