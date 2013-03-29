@@ -17,6 +17,7 @@ var engine = anatta.engine.builder.engine({
         "root:/index/": {field: "agent", uri: "src:/index.html"},
         "root:/link/": {field: "agent", uri: "src:/link.html"},
         "root:/tag/": {field: "agent", uri: "src:/tag.html"},
+        "root:/persona/": {field: "agent", uri: "src:/persona.html"},
         
         "http:": {field: "web"},
         "https:": {field: "web"},

@@ -87,11 +87,42 @@ window.addEventListener("load", function (ev) {
         }, 300);
     };
     
+    var personaInit = function () {
+        if (!navigator.id) return;
+        var onlogin = function (assertion) {
+            var gateway = "/persona/";
+            var data = "assertion=" + assertion + 
+                "&audience=" + location.href;
+            var req = new XMLHttpRequest();
+            req.addEventListener("load", function (ev) {
+                var data = JSON.parse(req.responseText);
+                inputs.identity.value = "persona:" + data.email;
+                inputs.author.value = data.email
+            }, false);
+            req.addEventListener("error", function (ev) {
+                navigator.id.logout();
+            }, false);
+            req.open("POST", gateway, true);
+            req.setRequestHeader(
+                "content-type", "application/x-www-form-urlencoded");
+            req.send(data);
+        };
+        navigator.id.watch({
+            onlogin: onlogin,
+            onlogout: function () {},
+        });
+        var button = document.querySelector("#persona-signin");
+        if (button) button.addEventListener("click", function (ev) {
+            navigator.id.request();
+        }, false);
+    };
+    
     // init
     var bookmarkletLink = document.querySelector("#bookmarklet");
     if (bookmarkletLink) bookmarkletLink.href = bookmarkletCode();
     loadContentFromHash();
     loadId();
+    personaInit();
     window.addEventListener("hashchange", loadContentFromHash, false);
     document.getElementById("post").addEventListener("click", doPost, false);
 }, false);

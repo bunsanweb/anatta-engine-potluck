@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>persona signin/out</title>
+<script src="https://login.persona.org/include.js"></script>
+<script>
+navigator.id.watch({
+  onlogin: function (assertion) {
+    var data = "assertion=" + assertion + "&audience=" + location.href;
+    var req = new XMLHttpRequest();
+    req.addEventListener("load", function (ev) {
+      //alert(req.responseText);
+      var data = JSON.parse(req.responseText);
+      //data.status == "okey"
+      //data.audience == location.href;
+      //alert([data.email, new Date(data.expires)]);
+      document.querySelector("#persona-email").textContent = data.email;
+    }, false);
+    req.addEventListener("error", function (ev) {
+      navigator.id.logout();
+    }, false);
+    req.open("POST", "/persona/", true);
+    req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
+    req.send(data);
+  },
+  onlogout: function () {
+    document.querySelector("#persona-email").textContent = "";
+  },
+});
+</script>
+</head>
+<body>
+ID: <span id="persona-email"></span>
+<button id="persona-login" onclick='navigator.id.request()'>sign in</button>
+<button id="persona-logout" onclick='navigator.id.logout()'>sign out</button>
+</body>
+</html>

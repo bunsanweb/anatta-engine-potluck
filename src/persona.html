@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>persona gateway</title>
+<script>
+window.addEventListener("agent-access", function (ev) {
+    ev.detail.accept();
+    var from = ev.detail.request;
+    if (from.method !== "POST") {
+      return ev.detail.respond("405", {allow: "POST"}, "");
+    }
+    var verify = "https://verifier.login.persona.org/verify";
+    //body: assertion=<coded-data>&audience=<uri-at-browser>
+    //console.log(from.text()); 
+    var req = anatta.engine.space.request(
+        from.method, verify, from.headers, from.body);
+    return anatta.engine.space.access(req).spread(function (req, res) {
+        //console.log(res.text());
+        return ev.detail.respond(res.status, res.headers, res.body);
+    });
+}, false);
+</script>
+</head>
+<body>
+</body>
+</html>
