@@ -1,16 +1,34 @@
 <!doctype html>
 <html>
   <head>
-    <title>link agent</title>
+    <title>tag agent</title>
     <script src="/shared/contrib/fusion.js"></script>
     <script src="streamer.js"></script>
     <script src="tag.js"></script>
     <link rel="config" href="config:/">
     <link rel="cacheBase" href="/tag/">
     <link rel="linkBase" href="/link/">
+    <link rel="cacheIndex" href="index.html">
   </head>
   <body>
-    <h1>link agent</h1>
+    <h1>tag agent</h1>
+
+    <article class="index">
+      <h1><a href="/">Potluck</a></h1>
+      <div>
+        <a href="/form.html">post form</a> |
+        <a href="/activities.html">activity list</a>
+      </div>
+      <hr>
+      <article class="tagged">
+        <h1 class="title">tag index</h1>
+        <ul id="elems"></ul>
+      </article>
+    </article>
+    <li class="elem" id="" data-fusion="id: id">
+      <a href="" data-fusion="href: view, text: text"></a>
+    </li>
+
     <article class="cache">
       <h1><a href="/">Potluck</a></h1>
       <div>

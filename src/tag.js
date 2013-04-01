@@ -2,8 +2,11 @@
 window.addEventListener("agent-load", function (ev) {
     var cacheBase = document.querySelector("[rel='cacheBase']").href;
     var linkBase = document.querySelector("[rel='linkBase']").href;
+    var cacheIndex = document.querySelector("[rel='cacheIndex']").href;
     var cacheTemplate = document.querySelector(".cache");
     var linkTemplate = document.querySelector(".link");
+    var indexTemplate = document.querySelector(".index");
+    var elemTemplate = document.querySelector(".elem");
     var url = anatta.builtin.url;
 
     var getConf = (function () {
@@ -59,7 +62,9 @@ window.addEventListener("agent-load", function (ev) {
             var tags = getTags(activity, ".tags");
             return anatta.q.all(tags.map(function (tag) {
                 return updateCache(tag, activity);
-            }));
+            })).then(function () {
+                return updateIndex(tags);
+            });
         });
     };
 
@@ -69,6 +74,13 @@ window.addEventListener("agent-load", function (ev) {
             var tag_ = tag.trim();
             if (tag_) return tag_;
         });
+    };
+
+    var toID = function (prefix, src) {
+        var body = Array.prototype.slice.call(src).map(function (ch) {
+            return ch.charCodeAt(0).toString(16);
+        }).join("");
+        return prefix + "-" + body;
     };
 
     var updateCache = function (tag, activity) {
@@ -81,7 +93,7 @@ window.addEventListener("agent-load", function (ev) {
             var cache = status == "200" ? cache.html : createCache(tag);
             return cache;
         }).then(function (cache) {
-            var id = idFromUri(activity.querySelector(".src").href);
+            var id = toID("link", activity.querySelector(".src").href);
             var updated = false;
             var article = cache.getElementById(id);
             var links = cache.querySelector("#links");
@@ -113,19 +125,12 @@ window.addEventListener("agent-load", function (ev) {
         return doc;
     };
 
-    var idFromUri = function (uri) {
-        var head = "link-";
-        return head + Array.prototype.slice.call(uri).map(function (ch) {
-            return ch.charCodeAt(0).toString(16);
-        }).join("");
-    };
-
     var createArticle = function (cache, activity) {
         var uri = activity.querySelector(".src").href;
         var tags = activity.querySelector(".tags");
         var obj = {
-            id: idFromUri(uri),
-            view: linkBase + encodeURIComponent(uri),
+            id: toID("link", uri),
+            view: url.resolve(linkBase, encodeURIComponent(uri)),
             title: activity.querySelector(".title").textContent,
             tags: tags ? tags.textContent : "",
             updated: activity.querySelector(".date").textContent,
@@ -150,6 +155,65 @@ window.addEventListener("agent-load", function (ev) {
             article.querySelector(".updated").textContent = date;
         }
         return updated;
+    };
+
+    var updateIndex = function (tags) {
+        return getIndex().then(function (index) {
+            var tagElems = {};
+            var elems = index.querySelectorAll(".elem");
+            Array.prototype.forEach.call(elems, function (elem) {
+                var tag = elem.textContent.trim();
+                tagElems[tag] = elem;
+            });
+            tags.forEach(function (tag) {
+                var id = toID("tag", tag);
+                if (!index.getElementById(id)) {
+                    tagElems[tag] = createElem(index, tag);
+                }
+            });
+            var container = index.querySelector("#elems");
+            container.innerHTML = "";
+            Object.keys(tagElems).sort().forEach(function (tag) {
+                var elem = tagElems[tag];
+                container.appendChild(
+                    tags.indexOf(tag) < 0 ? elem : updateElem(elem));
+            });
+            return index;
+        }).then(function (index) {
+            var indexLink = anatta.engine.link
+            return resolveOrb(cacheIndex).then(function (indexUri) {
+                return anatta.engine.link({href: indexUri}).put({
+                    headers: {"content-type": "text/html;charset=utf-8"},
+                    body: index.outerHTML
+                });
+            });
+        });
+    };
+
+    var createIndex = function () {
+        var title = "tag index"; 
+        var doc = document.implementation.createHTMLDocument(title);
+        var index = doc.importNode(indexTemplate, true);
+        doc.body.innerHTML = index.innerHTML;
+        return doc;
+    };
+
+    var createElem = function (index, tag) {
+        var uriObj = Object.create(
+                url.parse(cacheBase, true, true),
+                {query: {value: {or: tag}}});
+        var obj = {
+            id: toID("tag", tag),
+            view: url.format(uriObj),
+            text: tag
+        };
+        return window.fusion(obj, elemTemplate, index);
+    };
+
+    var updateElem = function (elem) {
+        var count = elem.getAttribute("count");
+        elem.setAttribute("count", count ? (count*1)+1 : "1");
+        return elem;
     };
 
     var mergeEntities = function (tags, entities, intersection) {
@@ -215,6 +279,16 @@ window.addEventListener("agent-load", function (ev) {
         return doc;
     };
 
+    var getIndex = function () {
+        return resolveOrb(cacheIndex).then(function (indexUri) {
+            return anatta.engine.link({href: indexUri}).get();
+        }).then(function (entity) {
+            var status = entity.response.status;
+            var index = status == "200" ? entity.html : createIndex();
+            return index;
+        });
+    };
+
     var get = function (ev) {
         var respond = function (status, message) {
             ev.detail.respond(status, {
@@ -222,7 +296,11 @@ window.addEventListener("agent-load", function (ev) {
             }, message);
         };
         var query = ev.detail.request.location.query;
-        if (!query.and && !query.or) respond("404", "no link");
+        if (!query.and && !query.or) {
+            return getIndex().then(function (index) {
+                respond("200", index.outerHTML);
+            });
+        }
         var tags = query.and ? query.and.split(" ") : query.or.split(" ");
         var tagDelimiter = query.and ? " && " : " || ";
         var title = "tag: " + tags.join(tagDelimiter);
