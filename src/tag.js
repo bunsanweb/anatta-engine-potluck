@@ -211,8 +211,9 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var updateElem = function (elem) {
-        var count = elem.getAttribute("count");
-        elem.setAttribute("count", count ? (count*1)+1 : "1");
+        var attr = "data-count";
+        var count = elem.getAttribute(attr);
+        elem.setAttribute(attr, count ? (count*1)+1 : "1");
         return elem;
     };
 
