@@ -152,7 +152,7 @@ window.addEventListener("agent-load", function (ev) {
         return updated;
     };
 
-    var mergeArticles = function (entities) {
+    var mergeEntities = function (tags, entities, intersection) {
         var base = "";
         var articles = {};
         entities.forEach(function (entity) {
@@ -162,18 +162,46 @@ window.addEventListener("agent-load", function (ev) {
                 Array.prototype.forEach.call(articles_, function (article) {
                     var updated = article.querySelector(".updated");
                     var msec = new Date(updated.textContent).valueOf();
-                    var key = [msec, article.id];
-                    articles[key] = article;
+                    var tags = article.querySelector(".tag").textContent;
+                    var obj = {
+                        article: article,
+                        count: 1, msec: msec, tags: tags
+                    };
+                    var fragment = articles[article.id];
+                    if (fragment) {
+                        if (msec < fragment.mec) {
+                            obj.article = fragment.article;
+                            obj.msec = fragment.msec;
+                        }
+                        obj.count = fragment.count + 1;
+                        obj.tags = fragment.tags + ", " + tags;
+                    }
+                    articles[article.id] = obj;
                 });
             }
         });
-        return [base, articles];
+        var articles_ = {};
+        Object.keys(articles).forEach(function (id) {
+            var article = articles[id];
+            if (!intersection ||
+                intersection && article.count == entities.length) {
+                var key = [article.msec, id];
+                var tags = {};
+                article.tags.split(",").map(function (tag) {
+                    var tag_ = tag.trim();
+                    if (tag_) tags[tag_] = "";
+                });
+                var tagText = Object.keys(tags).sort().join(", ");
+                article.article.querySelector(".tag").textContent = tagText;
+                articles_[key] = article.article;
+            }
+        });
+        return [base, articles_];
     };
 
-    var formatDocument = function (base, tags, articles) {
+    var formatDocument = function (base, title, articles) {
         if (!base.html || !articles) return "";
         var doc = base.html;
-        var title = "tag: " + tags.join(", ");
         doc.querySelector("title").textContent = title;
         doc.querySelector(".title").textContent = title;
         var container = doc.querySelector("#links");
@@ -194,14 +222,18 @@ window.addEventListener("agent-load", function (ev) {
             }, message);
         };
         var query = ev.detail.request.location.query;
-        if (!query.tag) respond("404", "no link");
-        var tags = query.tag.split(" ");
+        if (!query.and && !query.or) respond("404", "no link");
+        var tags = query.and ? query.and.split(" ") : query.or.split(" ");
+        var tagDelimiter = query.and ? " && " : " || ";
+        var title = "tag: " + tags.join(tagDelimiter);
         return anatta.q.all(tags.map(function (tag) {
             return resolveOrb(tag).then(function (cacheUri) {
                 return anatta.engine.link({href: cacheUri}).get();
             });
-        })).then(mergeArticles).spread(function (base, articles) {
-            return formatDocument(base, tags, articles);
+        })).then(function (entities) {
+            return mergeEntities(tags, entities, !!query.and);
+        }).spread(function (base, articles) {
+            return formatDocument(base, title, articles);
         }).then(function (doc) {
             var status = doc ? "200" : "404";
             var message = doc ? doc.outerHTML : "no link for " + tags;
