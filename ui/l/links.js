@@ -15,6 +15,7 @@ window.addEventListener("load", function (ev) {
                 Potluck.setTitle(doc);
                 Potluck.markdownComment("div.comment");
                 Potluck.linkToTagView(".tags");
+                Potluck.appendLoadPostFormButton();
             }
         }, false);
         req.open("GET", uri, true);
