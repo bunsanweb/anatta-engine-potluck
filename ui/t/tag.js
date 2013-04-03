@@ -12,17 +12,17 @@ window.addEventListener("load", function (ev) {
             if (main_) {
                 main.innerHTML = main_.innerHTML;
                 Potluck.setTitle(doc);
-                Potluck.markdownComment("div.comment");
-                Potluck.linkToTagView(".tags");
+                Potluck.linkToLinkView("article h1 a");
+                Potluck.linkToTagView(".tag");
             }
         }, false);
         req.open("GET", uri, true);
         req.setRequestHeader("cache-control", "no-cache, no-store");
         req.send();
     };
-    var linkAgentUri= Potluck.linkAgentUri(location.href);
-    load(linkAgentUri);
+    var tagAgentUri= Potluck.tagAgentUri(location.href);
+    load(tagAgentUri);
     setTimeout(function () {
-        load(linkAgentUri);
+        load(tagAgentUri);
     }, 100);
 }, false);

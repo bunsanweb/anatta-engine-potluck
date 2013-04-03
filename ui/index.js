@@ -12,10 +12,8 @@ window.addEventListener("load", function (ev) {
     });
     streamer.on("insert", function (entry, id) {
         var cur = document.querySelector("#" + id);
-        var a = entry.querySelector("h1 a");
-        var real = a.getAttribute("href");
-        var ui = real.replace(/^\/link\//, "/l/#");
-        a.setAttribute("href", ui);
+        Potluck.linkToLinkView(entry.querySelector("h1 a"));
+        Potluck.linkToTagView(entry.querySelector(".tag"));
         main.insertBefore(entry, cur);
     });
     streamer.on("refresh", function (updated) {

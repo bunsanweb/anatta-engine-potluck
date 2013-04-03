@@ -119,7 +119,7 @@ window.addEventListener("agent-load", function (ev) {
         var title = "tag: " + tag; 
         var doc = document.implementation.createHTMLDocument(title);
         var cache = doc.importNode(cacheTemplate, true);
-        var cacheTitle = cache.querySelector(".title");
+        var cacheTitle = cache.querySelector("h1");
         cacheTitle.textContent = title;
         doc.body.innerHTML = cache.innerHTML;
         return doc;
@@ -268,7 +268,7 @@ window.addEventListener("agent-load", function (ev) {
         if (!base.html || !articles) return "";
         var doc = base.html;
         doc.querySelector("title").textContent = title;
-        doc.querySelector(".title").textContent = title;
+        doc.querySelector("h1").textContent = title;
         var container = doc.querySelector("#links");
         container.innerHTML = "";
         Object.keys(articles).sort().forEach(function (key) {
@@ -318,7 +318,7 @@ window.addEventListener("agent-load", function (ev) {
             var message = doc ? doc.outerHTML : "no link for " + tags;
             respond(status, message);
         }).fail(function (err) {
-            respond("500", "somethind wrond ...\n\n: " + err);
+            respond("500", "somethind wrong ...\n\n: " + err);
         });
     };
 
