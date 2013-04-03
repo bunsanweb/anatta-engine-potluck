@@ -2,7 +2,8 @@
 
 window.addEventListener("load", function (ev) {
     var main = document.querySelector("main");
-    var load = function (uri) {
+    var load = function () {
+        var uri = Potluck.linkAgentUri(location.href);
         var req = new XMLHttpRequest();
         req.addEventListener("load", function (ev) {
             console.log(this.responseText);
@@ -20,9 +21,7 @@ window.addEventListener("load", function (ev) {
         req.setRequestHeader("cache-control", "no-cache, no-store");
         req.send();
     };
-    var linkAgentUri= Potluck.linkAgentUri(location.href);
-    load(linkAgentUri);
-    setTimeout(function () {
-        load(linkAgentUri);
-    }, 100);
+    load();
+    setTimeout(load, 100);
+    window.addEventListener("hashchange", load, false);
 }, false);
