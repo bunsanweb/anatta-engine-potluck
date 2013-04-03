@@ -1,13 +1,15 @@
 "use strict";
 
 var Potluck = (function () {
+    var getHash = function (uri) {
+        var hashPos = uri.indexOf("#");
+        return hashPos < 0 ? "" : uri.substring(hashPos + 1);
+    };
+
     var linkAgentBase = "/link/";
     var linkViewBase = "/l/";
     var linkAgentUri = function (uri) {
-        var hashPos = uri.indexOf("#");
-        if (hashPos < 0) return linkAgentBase;
-        var hash = uri.substring(hashPos + 1);
-        return linkAgentBase + hash;
+        return linkAgentBase + getHash(uri);
     };
     var linkToLinkView = function (arg) {
         var argIsObj = typeof arg === "object";
@@ -22,10 +24,7 @@ var Potluck = (function () {
     var tagAgentBase = "/tag/";
     var tagViewBase = "/t/#?or=";
     var tagAgentUri = function (uri) {
-        var hashPos = uri.indexOf("#");
-        if (hashPos < 0) return tagAgentBase;
-        var hash = uri.substring(hashPos + 1);
-        return tagAgentBase + hash;
+        return tagAgentBase + getHash(uri);
     };
 
     var linkToTagView = function (arg) {
@@ -49,6 +48,14 @@ var Potluck = (function () {
 
     var markdownComment = function (query) {
         var comments = document.querySelectorAll(query);
+        marked.setOptions({
+            smartLists: true,
+            breaks: true,
+            sanitize: false,
+            highlight: function (code, lang) {
+                return PR.prettyPrintOne(code, lang);
+            }
+        });
         Array.prototype.forEach.call(comments, function (comment) {
             comment.innerHTML = marked(comment.textContent);
         });
@@ -74,6 +81,6 @@ var Potluck = (function () {
         tagAgentUri: tagAgentUri,
         linkToTagView: linkToTagView,
         markdownComment: markdownComment,
-        setTitle: setTitle
+        setTitle: setTitle,
     };
 })();

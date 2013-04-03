@@ -33,6 +33,12 @@ blockquote {
   margin: 0.5em;
 }
 
+pre {
+  background: #ddd;
+  padding: 0.5em;
+  margin: 0.5em;
+}
+
 ul#form {
   list-style-type: none;
   margin: 0;
