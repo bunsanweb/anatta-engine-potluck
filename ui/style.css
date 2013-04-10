@@ -1,25 +1,90 @@
 h1 {
   font-size: 130%;
-  margin: 0.5em 0 0.2em 0;
+  margin: 0.5em 0 0.2em 0.2em;
 }
 h2 {font-size: 110%;}
 h3 {font-size: 105%;}
 
+body {
+  background: #f3f3f3;
+  margin: 0;
+  padding: 0;
+}
+body > h1 {
+  margin: 0;
+  padding: 0.2em;
+  background: #ff6e22;
+  color: #fff;
+}
+body > h1 > a {
+  color: #fff;
+}
+
+nav {
+  display: inline-block;
+  vertical-align: top;
+  width: 200px;
+  margin: 0;
+  padding: 0;
+}
+nav a {
+  color: #fff;
+}
+nav > ul {
+  margin: 0;
+  padding: 0;
+}
+nav > ul > li {
+  background: #ff6e22;
+  margin: 2px;
+  padding: 2px;
+}
+
+main {
+  display: inline-block;
+  vertical-align: top;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+footer {
+  clear: both;
+  display: block;
+}
+
 article {
-  margin: 0.5em;
-  padding: 0.5em;
+  display: block;
+  background: #fff;
+  margin: 2px;
+  padding: 1px;
 }
-article.link {border: solid 1px #000;}
-article.comment {
-  font-size: 90%;
-  border-bottom: dashed 1px #000;
+article.links {
+  display: inline-block;
+  vertical-align: top;
+  background: #f3f3f3;
+  width: 40%;
+  margin: 0;
+  padding: 0;
 }
+article.content {
+  display: inline-block;
+  vertical-align: top;
+  background: #f3f3f3;
+  width: 58%;
+  margin: 0;
+  padding: 0;
+}
+article.root {background: #ff6e22;}
+article.root h1 {font-size: 100%;}
+article.root a {color: #fff;}
+article input {width: 380px;}
+article textarea {width: 380px;}
+article.comment {background: #ddd;}
 
 div {
   margin: 0.2em 0 0.2em 1em;
 }
 div.comment {
-  font-size: 120%;
   margin: 0.5em 0.5em 0.5em 1.5em;
 }
 div#links {
@@ -28,7 +93,7 @@ div#links {
 }
 
 blockquote {
-  background: #ddd;
+  background: #ccc;
   padding: 0.2em 0.5em 0.2em 1em;
   margin: 0.5em;
 }
@@ -50,3 +115,14 @@ label {
 }
 input {width: 480px;}
 textarea {width: 480px;}
+
+a {
+  color: #ff6e22;
+  text-decoration: none;
+}
+a:active {text-decoration: underline;}
+a:hover {text-decoration: underline;}
+
+span.ref {font-size: 80%;}
+span.date {font-size: 80%;}
+span.updated {font-size: 80%;}

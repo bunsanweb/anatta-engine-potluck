@@ -202,7 +202,7 @@ var Activity = {
 
 var View = {
     get: (function () {
-        var defaultCount = 3;
+        var defaultCount = 20;
         var get = function (ev, index) {
             //console.log(index.outerHTML);
             //return index;
