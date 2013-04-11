@@ -28,44 +28,26 @@ var Potluck = (function () {
     };
 
     var loadLinkView = function (uri) {
-        document.querySelector(".content").innerHTML = "";
         load(uri, function (doc) {
             var entry = rootToEntry(doc.querySelector(".root"));
             if (!document.getElementById(entry.id)) {
                 linkToTagView(entry.querySelector(".tags"));
-                document.querySelector(".links").appendChild(entry);
+                document.querySelector("main").appendChild(entry);
+                setContent(entry, doc);
             }
-            var content = document.querySelector(".content");
-            if (content.innerHTML != "") content.innerHTML = "";
-            content.id = entry.id + "-content";
-            var root = document.importNode(
-                doc.querySelector(".root"));
-            var container = root.querySelector("#comments");
-            var container_ = container.cloneNode(true);
-            formatRoot(entry, root);
-            content.appendChild(root);
-            var comments = container_.querySelectorAll("article");
-            Array.prototype.forEach.call(comments,
-                function (comment) {
-                    var comment_ = formatComment(entry, comment);
-                    content.appendChild(comment_);
-                }
-            );
-            setForm(entry);
         });
     };
 
     var loadTagView = function (uri) {
-        document.querySelector(".content").innerHTML = "";
-        var links = document.querySelector(".links");
+        var main = document.querySelector("main");
         load(uri, function (doc) {
-            var links_ = doc.querySelector("#links");
-            if (links_) {
-                links.innerHTML = links_.innerHTML;
+            var links = doc.querySelector("#links");
+            if (links) {
+                main.innerHTML = links.innerHTML;
                 setTitle(doc);
                 linkToLinkView("article > h1 > a");
                 linkToTagView(".tag");
-                var articles = links.querySelectorAll("article");
+                var articles = main.querySelectorAll("article");
                 Array.prototype.forEach.call(articles, function (article) {
                     addLoadContentEvent(article);
                 });
@@ -200,7 +182,6 @@ var Potluck = (function () {
 
     var formUri = "/form.html";
     var formatRoot = function (entry, article) {
-        var content = document.querySelector(".content");
         var tags = article.querySelector(".tags");
         article.removeChild(tags.parentNode);
         var container = article.querySelector("#comments");
@@ -226,25 +207,50 @@ var Potluck = (function () {
         return document.importNode(article, true);
     };
 
-    var setForm = function (entry) {
-        var formId = entry.id + "-form";
-        if (document.getElementById(formId)) return;
+    var getPostButton = function (entry) {
         var formUri = "/form.html";
-        var content = document.querySelector(".content");
-        load(formUri, function (doc) {
+        var button = document.createElement("button");
+        button.textContent = "post";
+        button.value = "post";
+        button.addEventListener("click", function () {
             var a = entry.querySelector("h1 > a");
-            var hash = getHash(a.href);
-            var uri = hash ? decodeURIComponent(hash) : a.href;
-            var title = a.textContent;
-            var form = formatForm(doc, uri, title);
-            var h1 = document.createElement("h1");
-            h1.textContent = "post";
-            var article = document.createElement("article");
-            article.id = formId;
-            article.appendChild(h1);
-            article.appendChild(form);
-            content.appendChild(article);
-        });
+            var uri = getHash(a.href) || a.href;
+            var title = encodeURIComponent(a.textContent);
+            window.open(
+                formUri + "#title=" + title + "&url=" + uri,
+                "potluck post",
+                "width=640, height=640");
+            return;
+        }, false);
+        return button;
+    };
+
+    var setContent = function (entry, doc) {
+        var content = document.getElementById("content");
+        if (content) {
+            content.parentNode.removeChild(content);
+            var links = document.querySelectorAll("article.link");
+            Array.prototype.forEach.call(links, function (link) {
+                link.style.display = "block";
+            });
+        }
+        content = document.createElement("article");
+        content.id = "content";
+        var root = document.importNode(doc.querySelector(".root"));
+        var container = root.querySelector("#comments");
+        var container_ = container.cloneNode(true);
+        formatRoot(entry, root);
+        content.appendChild(root);
+        var comments = container_.querySelectorAll("article");
+        Array.prototype.forEach.call(comments,
+            function (comment) {
+                var comment_ = formatComment(entry, comment);
+                content.appendChild(comment_);
+            }
+        );
+        entry.style.display = "inline-block";
+        entry.parentNode.insertBefore(content, entry.nextSibling);
+        content.appendChild(getPostButton(entry));
     };
 
     var addLoadContentEvent = function (entry) {
@@ -257,7 +263,7 @@ var Potluck = (function () {
             entry.style.color = "#000";
         }, false);
         entry.addEventListener("click", function () {
-            var articles = document.querySelectorAll(".links > article");
+            var articles = document.querySelectorAll("main > article");
             Array.prototype.forEach.call(articles, function (article) {
                 article.style.border = "";
             });
@@ -277,23 +283,7 @@ var Potluck = (function () {
                 var href = entry.querySelector("h1 > a").href;
                 var uri = linkAgentUri(href);
                 load(uri, function (doc) {
-                    var content = document.querySelector(".content");
-                    if (content.innerHTML != "") content.innerHTML = "";
-                    content.id = entry.id + "-content";
-                    var root = document.importNode(
-                        doc.querySelector(".root"));
-                    var container = root.querySelector("#comments");
-                    var container_ = container.cloneNode(true);
-                    formatRoot(entry, root);
-                    content.appendChild(root);
-                    var comments = container_.querySelectorAll("article");
-                    Array.prototype.forEach.call(comments,
-                        function (comment) {
-                            var comment_ = formatComment(entry, comment);
-                            content.appendChild(comment_);
-                        }
-                    );
-                    setForm(entry);
+                    setContent(entry, doc);
                 });
             }
         }, false);

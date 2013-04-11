@@ -3,19 +3,19 @@
 //script for agents development
 //note: implement another index.js for real UI
 window.addEventListener("load", function (ev) {
-    var links = document.querySelector(".links");
+    var main = document.querySelector("main");
     var indexUri = "/index/";
     var firstTime = true;
     var streamer = Streamer(indexUri);
     streamer.on("clear", function () {
-        links.innerHTML = "";
+        main.innerHTML = "";
     });
     streamer.on("insert", function (entry, id) {
         var cur = document.querySelector("#" + id);
         Potluck.linkToLinkView(entry.querySelector("h1 a"));
         Potluck.linkToTagView(entry.querySelector(".tag"));
         Potluck.addLoadContentEvent(entry);
-        links.insertBefore(entry, cur);
+        main.insertBefore(entry, cur);
     });
     streamer.on("refresh", function (updated) {
         if (firstTime) {
@@ -37,7 +37,7 @@ window.addEventListener("load", function (ev) {
             doc.documentElement.innerHTML = this.responseText;
             var listPart = doc.querySelector(query);
             if (listPart) {
-                links.innerHTML = listPart.innerHTML;
+                main.innerHTML = listPart.innerHTML;
             }
         }, false);
         req.open("GET", indexUri, true);

@@ -1,5 +1,5 @@
 h1 {
-  font-size: 130%;
+  font-size: 110%;
   margin: 0.5em 0 0.2em 0.2em;
 }
 h2 {font-size: 110%;}
@@ -21,9 +21,9 @@ body > h1 > a {
 }
 
 nav {
-  display: inline-block;
+  display: block;
   vertical-align: top;
-  width: 200px;
+  width: 40%;
   margin: 0;
   padding: 0;
 }
@@ -35,14 +35,14 @@ nav > ul {
   padding: 0;
 }
 nav > ul > li {
+  display: inline-block;
   background: #ff6e22;
-  margin: 2px;
+  margin: 0;
   padding: 2px;
 }
 
 main {
-  display: inline-block;
-  vertical-align: top;
+  display: block;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -58,19 +58,20 @@ article {
   margin: 2px;
   padding: 1px;
 }
-article.links {
-  display: inline-block;
-  vertical-align: top;
-  background: #f3f3f3;
-  width: 40%;
-  margin: 0;
-  padding: 0;
-}
 article.content {
   display: inline-block;
   vertical-align: top;
   background: #f3f3f3;
   width: 60%;
+  margin: 0;
+  padding: 0;
+}
+article.link {width: 40%;}
+article#content {
+  display: inline-block;
+  vertical-align: top;
+  background: #f3f3f3;
+  width: 55%;
   margin: 0;
   padding: 0;
 }
@@ -81,16 +82,8 @@ article input {width: 380px;}
 article textarea {width: 380px;}
 article.comment {background: #ddd;}
 
-div {
-  margin: 0.2em 0 0.2em 1em;
-}
-div.comment {
-  margin: 0.5em 0.5em 0.5em 1.5em;
-}
-div#links {
-  margin: 0;
-  padding: 0;
-}
+div {margin: 0.2em 0 0.2em 1em;}
+div.comment {margin: 0.5em 0.5em 0.5em 1.5em;}
 
 blockquote {
   background: #ccc;
