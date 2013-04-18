@@ -55,8 +55,8 @@ var Potluck = (function () {
         });
     };
 
-    var linkAgentBase = "/link/";
-    var linkViewBase = "/l/";
+    var linkAgentBase = "./link/";
+    var linkViewBase = "./l/";
     var linkAgentUri = function (uri) {
         return linkAgentBase + getHash(uri);
     };
@@ -70,8 +70,8 @@ var Potluck = (function () {
         });
     };
 
-    var tagAgentBase = "/tag/";
-    var tagViewBase = "/t/#?or=";
+    var tagAgentBase = "./tag/";
+    var tagViewBase = "./t/#?or=";
     var tagAgentUri = function (uri) {
         return tagAgentBase + getHash(uri);
     };
@@ -180,7 +180,7 @@ var Potluck = (function () {
         return container;
     };
 
-    var formUri = "/form.html";
+    var formUri = "./form.html";
     var formatRoot = function (entry, article) {
         var tags = article.querySelector(".tags");
         article.removeChild(tags.parentNode);
@@ -208,7 +208,7 @@ var Potluck = (function () {
     };
 
     var getPostButton = function (entry) {
-        var formUri = "/form.html";
+        var formUri = "./form.html";
         var button = document.createElement("button");
         button.textContent = "post";
         button.value = "post";
@@ -290,7 +290,7 @@ var Potluck = (function () {
     };
 
     var loadActivityList = function () {
-        var uri = "/activityList/";
+        var uri = "./activityList/";
         load(uri, function (doc) {
             var links = doc.querySelector("#links");
             if (links) {

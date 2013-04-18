@@ -4,7 +4,7 @@
 //note: implement another index.js for real UI
 window.addEventListener("load", function (ev) {
     var main = document.querySelector("main");
-    var indexUri = "/activityList/";
+    var indexUri = "./activityList/";
     var query = "#links";
     
     var req = new XMLHttpRequest();

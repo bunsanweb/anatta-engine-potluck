@@ -4,7 +4,7 @@
 //note: implement another index.js for real UI
 window.addEventListener("load", function (ev) {
     var main = document.querySelector("main");
-    var indexUri = "/index/";
+    var indexUri = "./index/";
     var firstTime = true;
     var streamer = Streamer(indexUri);
     streamer.on("clear", function () {
