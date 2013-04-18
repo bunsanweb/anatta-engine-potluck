@@ -70,7 +70,7 @@ window.addEventListener("load", function (ev) {
     var doPost = function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        var postUri = "/post/";
+        var postUri = "./post/";
         var form = new FormData();
         Object.keys(inputs).forEach(function (key) {
             form.append(key, inputs[key].value);
@@ -83,7 +83,7 @@ window.addEventListener("load", function (ev) {
     var onLoad = function (ev) {
         storeId();
         setTimeout(function () {
-            window.location.href = "/";
+            window.location.href = "./";
         }, 300);
     };
     
