@@ -83,16 +83,36 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var updateCacheTags = function (cache, tags) {
-        if (!tags) return;
-        var obj = {};
+        if (!tags) return anatta.q.resolve(false);
         var cacheTags = cache.querySelector(".tags");
-        [cacheTags, tags].forEach(function (tags) {
-            var tagText = tags.textContent;
-            if (tagText) tagText.split(",").forEach(function (tag) {
-                if (tag) obj[tag.trim()] = "";
-            });
+        var tagText = [cacheTags.textContent, tags.textContent].join(",");
+        return linkToTagAgent(cache, tagText).then(function (tagHTML) {
+            cacheTags.innerHTML = tagHTML;
+            return true;
         });
-        cacheTags.textContent = Object.keys(obj).sort().join(", ");
+    };
+
+    var linkToTagAgent = function (doc, tagText) {
+        return getConf().then(function (conf) {
+            if (!tagText) return "";
+            var tagBase = conf.first(
+                {rel: "tagBase"}).html.getAttribute("href") + "?or=";
+            var tagAnchors = {};
+            tagText.split(",").forEach(function (tag) {
+                var tag_ = tag.trim();
+                if (tag_) {
+                    var a = doc.createElement("a");
+                    a.textContent = tag_;
+                    a.href = tagBase + tag_;
+                    tagAnchors[tag_] = a;
+                }
+            });
+            var tagAnchorHTMLs = [];
+            Object.keys(tagAnchors).sort().forEach(function (tag) {
+                tagAnchorHTMLs.push(tagAnchors[tag].outerHTML);
+            });
+            return tagAnchorHTMLs.join(", ");
+        });
     };
 
     var updateCache = function (activity, cache) {
@@ -103,10 +123,14 @@ window.addEventListener("agent-load", function (ev) {
         return link.get().then(function (entity) {
             var doc = entity.html;
             var tags = doc.querySelector(".tags");
-            updateCacheTags(cache, tags);
+            return [doc, updateCacheTags(cache, tags)];
+        }).spread(function (doc, updated) {
+            var tagText = doc.querySelector(".tags").textContent;
+            return [doc, linkToTagAgent(doc, tagText)];
+        }).spread(function (doc, tagHTML) {
             var obj = {
                 id: activity.id,
-                tags: tags ? tags.textContent : "",
+                tags: tagHTML,
                 author: doc.querySelector(".author").textContent,
                 identity: doc.querySelector(".author").href,
                 date: doc.querySelector(".date").textContent,

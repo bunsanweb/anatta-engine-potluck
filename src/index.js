@@ -132,8 +132,10 @@ var Index = {
             var isNewer = Util.dateLessThan(dateExisted, dateEntry);
             var newer = isNewer ? entry : existed;
             var older = isNewer ? existed: entry;
-            var tags = older.querySelector(".tag").textContent;
-            tagMerge(newer.querySelector(".tag"), tags);
+            var merged = tagMerge(
+                newer.querySelectorAll(".tag > a"),
+                older.querySelectorAll(".tag > a"));
+            newer.querySelector(".tag").innerHTML = merged;
             if (!isNewer) return null;
             existed.parentNode.removeChild(existed);
             return entry;
@@ -153,11 +155,15 @@ var Index = {
             index.querySelector("main").appendChild(entry);
             return index;
         };
-        var tagMerge = function (node, tagText) {
-            var tags = tagText.split(/\s*,\s*/);
-            var currents = node.textContent.split(/\s*,\s*/);
-            var merged = Util.uniq(tags.concat(currents).sort());
-            node.textContent = merged.join(", ");
+        var tagMerge = function (newerTagAnchors, olderTagAnchors) {
+            var tagAnchorHTMLs = [];
+            [newerTagAnchors, olderTagAnchors].forEach(function (tagAs) {
+                Array.prototype.forEach.call(tagAs, function (tagA) {
+                    tagAnchorHTMLs.push(tagA.outerHTML);
+                });
+            });
+            var merged = Util.uniq(tagAnchorHTMLs.sort());
+            return merged.join(", ");
         };
         return updateEntry;
     })(),
@@ -180,6 +186,20 @@ var Activity = {
                 return ch.charCodeAt(0).toString(16);
             }).join("");
         };
+
+        var toAnchorTexts = function (conf, tagText) {
+            var tagBase = conf.first({
+                rel: "tagBase"}).html.getAttribute("href");
+            var tagAnchors = [];
+            tagText.split(",").forEach(function (tag) {
+                var tag_ = tag.trim();
+                var a = document.createElement("a");
+                a.href = tagBase + "?or=" + tag_;
+                a.textContent = tag_;
+                tagAnchors.push(a.outerHTML);
+            });
+            return tagAnchors.join(", ");
+        };
         
         var entryData = function (conf, activity) {
             var linkBase = conf.first({
@@ -187,12 +207,14 @@ var Activity = {
             var url = activity.querySelector(".src").href;
             var view = linkBase + encodeURIComponent(url);
             var id = idFromUri(url);
+            var tagText = activity.querySelector(".tags").textContent;
+            var tagAnchorText = toAnchorTexts(conf, tagText);
             return {
                 id: id,
                 url: url,
                 view: view,
                 title: activity.querySelector(".title").textContent,
-                tags: activity.querySelector(".tags").textContent,
+                tags: tagAnchorText,
                 updated: activity.querySelector(".date").textContent,
             };
         };

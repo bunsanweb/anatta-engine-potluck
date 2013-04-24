@@ -59,7 +59,7 @@ window.addEventListener("agent-load", function (ev) {
     var queue = anatta.q.resolve(null);
     var insert = function (activity) {
         queue = queue.then(function () {
-            var tags = getTags(activity, ".tags");
+            var tags = getTagTexts(activity, ".tags");
             return anatta.q.all(tags.map(function (tag) {
                 return updateCache(tag, activity);
             })).then(function () {
@@ -68,7 +68,7 @@ window.addEventListener("agent-load", function (ev) {
         });
     };
 
-    var getTags = function (elem, query) {
+    var getTagTexts = function (elem, query) {
         var tags = elem.querySelector(query);
         return tags.textContent.split(",").map(function (tag) {
             var tag_ = tag.trim();
@@ -98,14 +98,23 @@ window.addEventListener("agent-load", function (ev) {
             var article = cache.getElementById(id);
             var links = cache.querySelector("#links");
             if (!article) {
-                updated = true;
-                article = createArticle(cache, activity);
+                return createArticle(cache, activity).then(
+                    function (article) {
+                        links.insertBefore(article, links.firstChild);
+                        return [cache, true];
+                    }
+                );
             } else {
-                updated = updateArticle(article, activity);
-                if (updated) links.removeChild(article);
+                return updateArticle(article, activity).then(
+                    function (updated) {
+                        if (updated) {
+                            links.removeChild(article);
+                            links.insertBefore(article, links.firstChild);
+                            return [cache, updated];
+                        }
+                    }
+                );
             }
-            if (updated) links.insertBefore(article, links.firstChild);
-            return [cache, updated];
         }).spread(function (cache, updated) {
             if (!updated) return;
             return cacheLink.put({
@@ -125,36 +134,71 @@ window.addEventListener("agent-load", function (ev) {
         return doc;
     };
 
+    var getTagHTML = function (elem, query, base) {
+        var doc = elem.ownerDocument;
+        var tagAnchorHTMLs= [];
+        var tagTexts = getTagTexts(elem, query);
+        tagTexts.forEach(function (tag) {
+            var a = doc.createElement("a");
+            a.textContent = tag;
+            a.href = base + tag;
+            tagAnchorHTMLs.push(a.outerHTML);
+        });
+        return tagAnchorHTMLs.join(", ");
+    };
+
     var createArticle = function (cache, activity) {
         var uri = activity.querySelector(".src").href;
         var tags = activity.querySelector(".tags");
-        var obj = {
-            id: toID("link", uri),
-            view: url.resolve(linkBase, encodeURIComponent(uri)),
-            title: activity.querySelector(".title").textContent,
-            tags: tags ? tags.textContent : "",
-            updated: activity.querySelector(".date").textContent,
-        };
-        return window.fusion(obj, linkTemplate, cache);
+        return getConf().then(function (conf) {
+            var tagBase = conf.first(
+                {rel: "tagBase"}).html.getAttribute("href") + "?or=";
+            var tagHTML = getTagHTML(activity, ".tags", tagBase);
+            var obj = {
+                id: toID("link", uri),
+                view: url.resolve(linkBase, encodeURIComponent(uri)),
+                title: activity.querySelector(".title").textContent,
+                tags: tagHTML,
+                updated: activity.querySelector(".date").textContent,
+            };
+            return window.fusion(obj, linkTemplate, cache);
+        });
+    };
+
+    var getTagAnchorHTMLs = function (elem, query) {
+        var tags = elem.querySelectorAll(query);
+        var tagAnchorHTMLs = [];
+        Array.prototype.forEach.call(tags, function (tag) {
+            tagAnchorHTMLs.push(tag.outerHTML);
+        });
+        return tagAnchorHTMLs;
     };
 
     var updateArticle = function (article, activity) {
         var updated = false;
-        var tags = getTags(article, ".tag");
-        getTags(activity, ".tags").forEach(function (tag) {
-            var pos = tags.indexOf(tag);
-            if (pos < 0) {
-                tags.push(tag);
-                updated = true;
+        var doc = article.ownerDocument;
+        var tagAnchorHTMLs = getTagAnchorHTMLs(article, ".tag > a");
+        return getConf().then(function (conf) {
+            var tagBase = conf.first(
+                {rel: "tagBase"}).html.getAttribute("href") + "?or=";
+            getTagTexts(activity, ".tags").forEach(function (tag) {
+                var a = doc.createElement("a");
+                a.textContent = tag;
+                a.href = tagBase + tag;
+                var pos = tagAnchorHTMLs.indexOf(a.outerHTML);
+                if (pos < 0) {
+                    tagAnchorHTMLs.push(a.outerHTML);
+                    updated = true;
+                }
+            });
+            if (updated) {
+                var tagHTML = tagAnchorHTMLs.sort().join(", ");
+                article.querySelector(".tag").innerHTML = tagHTML;
+                var date = activity.querySelector(".date").textContent;
+                article.querySelector(".updated").textContent = date;
             }
+            return updated;
         });
-        if (updated) {
-            var tagText = tags.sort().join(", ");
-            article.querySelector(".tag").textContent = tagText;
-            var date = activity.querySelector(".date").textContent;
-            article.querySelector(".updated").textContent = date;
-        }
-        return updated;
     };
 
     var updateIndex = function (tags) {
@@ -227,7 +271,7 @@ window.addEventListener("agent-load", function (ev) {
                 Array.prototype.forEach.call(articles_, function (article) {
                     var updated = article.querySelector(".updated");
                     var msec = new Date(updated.textContent).valueOf();
-                    var tags = article.querySelector(".tag").textContent;
+                    var tags = getTagAnchorHTMLs(article, ".tag > a");
                     var obj = {
                         article: article,
                         count: 1, msec: msec, tags: tags
@@ -239,7 +283,7 @@ window.addEventListener("agent-load", function (ev) {
                             obj.msec = fragment.msec;
                         }
                         obj.count = fragment.count + 1;
-                        obj.tags = fragment.tags + ", " + tags;
+                        obj.tags = fragment.tags.concat(tags);
                     }
                     articles[article.id] = obj;
                 });
@@ -251,13 +295,8 @@ window.addEventListener("agent-load", function (ev) {
             if (!intersection ||
                 intersection && article.count == entities.length) {
                 var key = [article.msec, id];
-                var tags = {};
-                article.tags.split(",").map(function (tag) {
-                    var tag_ = tag.trim();
-                    if (tag_) tags[tag_] = "";
-                });
-                var tagText = Object.keys(tags).sort().join(", ");
-                article.article.querySelector(".tag").textContent = tagText;
+                var tagHTML = article.tags.sort().join(", ");
+                article.article.querySelector(".tag").innerHTML = tagHTML;
                 articles_[key] = article.article;
             }
         });
