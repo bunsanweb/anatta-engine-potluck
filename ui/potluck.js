@@ -18,6 +18,20 @@ var Potluck = (function () {
         req.send();
     };
 
+    var prepareIndex = function (entry) {
+        addLoadContentEvent(entry, true);
+        linkToLinkView(entry.querySelectorAll("h1 a"), true);
+        linkToTagView(entry.querySelectorAll(".tag > a"), true);
+    };
+
+    var linkAgentUri = function (prefix, uri) {
+        return prefix + "/link/" + getHash(uri);
+    };
+
+    var tagAgentUri = function (prefix, uri) {
+        return prefix + "/tag/" + getHash(uri);
+    };
+
     var rootToEntry = function (root) {
         var entry = document.importNode(root, true);
         entry.setAttribute("class", "link");
@@ -28,10 +42,12 @@ var Potluck = (function () {
     };
 
     var loadLinkView = function (uri) {
+        var prefix = "..";
+        var uri = linkAgentUri(prefix, uri);
         load(uri, function (doc) {
             var entry = rootToEntry(doc.querySelector(".root"));
             if (!document.getElementById(entry.id)) {
-                linkToTagView(entry.querySelector(".tags"));
+                linkToTagView(entry.querySelectorAll(".tags > a"));
                 document.querySelector("main").appendChild(entry);
                 setContent(entry, doc);
             }
@@ -39,6 +55,8 @@ var Potluck = (function () {
     };
 
     var loadTagView = function (uri) {
+        var prefix = "..";
+        uri = tagAgentUri(prefix, uri);
         var main = document.querySelector("main");
         load(uri, function (doc) {
             var links = doc.querySelector("#links");
@@ -46,70 +64,12 @@ var Potluck = (function () {
                 main.innerHTML = links.innerHTML;
                 setTitle(doc);
                 linkToLinkView("article > h1 > a");
-                linkToTagView(".tag");
+                linkToTagView(".tag > a");
                 var articles = main.querySelectorAll("article");
                 Array.prototype.forEach.call(articles, function (article) {
                     addLoadContentEvent(article);
                 });
             }
-        });
-    };
-
-    var linkAgentBase = "./link/";
-    var linkViewBase = "./l/";
-    var linkAgentUri = function (uri) {
-        return linkAgentBase + getHash(uri);
-    };
-    var linkToLinkView = function (arg) {
-        var argIsObj = typeof arg === "object";
-        var anchors = argIsObj ? [arg] : document.querySelectorAll(arg);
-        Array.prototype.forEach.call(anchors, function (a) {
-            var real = a.getAttribute("href"); 
-            var ui = real.replace(/^\/link\//, "/l/#");
-            a.setAttribute("href", ui);
-        });
-    };
-
-    var tagAgentBase = "./tag/";
-    var tagViewBase = "./t/#?or=";
-    var tagAgentUri = function (uri) {
-        return tagAgentBase + getHash(uri);
-    };
-
-    var linkToTagView = function (arg) {
-        var argIsObj = typeof arg === "object";
-        var tagss = argIsObj ? [arg] : document.querySelectorAll(arg);
-        Array.prototype.forEach.call(tagss, function (tags) {
-            var tagsText = tags && tags.textContent ? tags.textContent : "";
-            if (tagsText) {
-                var tagAnchors = [];
-                tagsText.split(",").map(function (tag) {
-                    var tag_ = tag.trim();
-                    if (tag_) {
-                        var a = document.createElement("a");
-                        a.href = tagViewBase + tag_;
-                        a.textContent = tag_;
-                        tags.appendChild(a);
-                        tagAnchors.push(a.outerHTML);
-                    }
-                });
-                tags.innerHTML = tagAnchors.join(", ");
-            }
-        });
-    };
-
-    var markdownComment = function (query) {
-        var comments = document.querySelectorAll(query);
-        marked.setOptions({
-            smartLists: true,
-            breaks: true,
-            sanitize: false,
-            highlight: function (code, lang) {
-                return PR.prettyPrintOne(code, lang);
-            }
-        });
-        Array.prototype.forEach.call(comments, function (comment) {
-            comment.innerHTML = marked(comment.textContent);
         });
     };
 
@@ -127,60 +87,41 @@ var Potluck = (function () {
         h1.appendChild(span);
     };
 
-    var buildFormData = function () {
-        var formdata = new FormData();
-        var inputs = document.querySelectorAll("input, textarea");
-        Array.prototype.forEach.call(inputs, function (input) {
-            formdata.append(input.id, input.value);
-        });
-        return formdata;
-    };
-
-    var post = function () {
-        var uri = "/post/";
-        var formdata = buildFormData();
-        var req = new XMLHttpRequest();
-        req.addEventListener("load", function (ev) {
-            setTimeout(function () {
-                window.location.href = "/";
-            }, 300);
-        }, false);
-        req.open("POST", uri, true);
-        req.send(formdata);
-    };
-
-    var createPostButton = function () {
-        var button = document.createElement("button");
-        button.id = "post";
-        button.textContent = "post";
-        button.addEventListener("click", post, false);
-        var div = document.createElement("div");
-        div.appendChild(button);
-        return div;
-    };
-
-    var formatForm = function (doc, uri, title) {
-        var form = document.importNode(doc.getElementById("form"), true);
-        var inputs = form.querySelectorAll("input");
-        Array.prototype.forEach.call(inputs, function (input) {
-            var id = input.id;
-            if (id == "url" || id == "title") {
-                input.value = id == "url" ? uri : title;
-                input.type = "hidden";
-                var label = form.querySelector("[for='" + id + "']");
-                label.style.display = "none";
-            } else {
-                input.value = "";
+    var linkToView = function (arg, src, dst, isIndex) {
+        var argIsObj = typeof arg === "object";
+        var elems = argIsObj ? arg : document.querySelectorAll(arg);
+        Array.prototype.forEach.call(elems, function (elem) {
+            var real = elem.getAttribute("href"); 
+            if (real) {
+                var ui = real.replace(src, dst);
+                elem.setAttribute("href", isIndex ? ui.substring(1) : ui);
             }
         });
-        form.querySelector("textarea").value = "";
-        var container = document.createElement("div");
-        container.appendChild(form);
-        container.appendChild(createPostButton());
-        return container;
     };
 
-    var formUri = "./form.html";
+    var linkToLinkView = function (arg, isIndex) {
+        return linkToView(arg, /\/link\//, "\/l\/#", isIndex);
+    };
+
+    var linkToTagView = function (arg, isIndex) {
+        return linkToView(arg, /\/tag\//, "\/t\/#", isIndex);
+    };
+
+    var markdownComment = function (query) {
+        var comments = document.querySelectorAll(query);
+        marked.setOptions({
+            smartLists: true,
+            breaks: true,
+            sanitize: false,
+            highlight: function (code, lang) {
+                return PR.prettyPrintOne(code, lang);
+            }
+        });
+        Array.prototype.forEach.call(comments, function (comment) {
+            comment.innerHTML = marked(comment.textContent);
+        });
+    };
+
     var formatRoot = function (entry, article) {
         var tags = article.querySelector(".tags");
         article.removeChild(tags.parentNode);
@@ -191,9 +132,9 @@ var Potluck = (function () {
         a.textContent = a.href;
     };
 
-    var formatComment = function (entry, article) {
+    var formatComment = function (entry, article, isIndex) {
         article.id = entry.id + "-comment-" + article.id;
-        linkToTagView(article.querySelector(".tags"));
+        linkToTagView(article.querySelectorAll(".tags > a"), isIndex);
         var comment = article.querySelector("div.comment");
         marked.setOptions({
             smartLists: true,
@@ -207,8 +148,9 @@ var Potluck = (function () {
         return document.importNode(article, true);
     };
 
-    var getPostButton = function (entry) {
-        var formUri = "./form.html";
+    var getPostButton = function (entry, isIndex) {
+        var prefix = isIndex ? "." : "..";
+        var formUri = "/form.html";
         var button = document.createElement("button");
         button.textContent = "post";
         button.value = "post";
@@ -217,7 +159,7 @@ var Potluck = (function () {
             var uri = getHash(a.href) || a.href;
             var title = encodeURIComponent(a.textContent);
             window.open(
-                formUri + "#title=" + title + "&url=" + uri,
+                prefix + formUri + "#title=" + title + "&url=" + uri,
                 "potluck post",
                 "width=640, height=640");
             return;
@@ -225,7 +167,7 @@ var Potluck = (function () {
         return button;
     };
 
-    var setContent = function (entry, doc) {
+    var setContent = function (entry, doc, isIndex) {
         var content = document.getElementById("content");
         if (content) {
             content.parentNode.removeChild(content);
@@ -244,7 +186,7 @@ var Potluck = (function () {
         var comments = container_.querySelectorAll("article");
         Array.prototype.forEach.call(comments,
             function (comment) {
-                var comment_ = formatComment(entry, comment);
+                var comment_ = formatComment(entry, comment, isIndex);
                 content.appendChild(comment_);
             }
         );
@@ -253,7 +195,8 @@ var Potluck = (function () {
         content.appendChild(getPostButton(entry));
     };
 
-    var addLoadContentEvent = function (entry) {
+    var addLoadContentEvent = function (entry, isIndex) {
+        var prefix = isIndex ? "." : "..";
         entry.addEventListener("mouseover", function () {
             entry.style.background = "#898989";
             entry.style.color = "#fff";
@@ -281,32 +224,17 @@ var Potluck = (function () {
                 }
             } else {
                 var href = entry.querySelector("h1 > a").href;
-                var uri = linkAgentUri(href);
+                var uri = linkAgentUri(prefix, href);
                 load(uri, function (doc) {
-                    setContent(entry, doc);
+                    setContent(entry, doc, isIndex);
                 });
             }
         }, false);
     };
 
-    var loadActivityList = function () {
-        var uri = "./activityList/";
-        load(uri, function (doc) {
-            var links = doc.querySelector("#links");
-            if (links) {
-                document.querySelector("aside").innerHTML = links.innerHTML;
-            }
-        });
-    };
-
     return {
-        linkAgentUri: linkAgentUri,
-        tagAgentUri: tagAgentUri,
         loadLinkView: loadLinkView,
         loadTagView: loadTagView,
-        linkToLinkView: linkToLinkView,
-        linkToTagView: linkToTagView,
-        addLoadContentEvent: addLoadContentEvent,
-        loadActivityList: loadActivityList,
+        prepareIndex: prepareIndex
     };
 })();

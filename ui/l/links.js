@@ -2,8 +2,7 @@
 
 window.addEventListener("load", function (ev) {
     var load = function () {
-        var uri = Potluck.linkAgentUri(location.href);
-        Potluck.loadLinkView(uri);
+        Potluck.loadLinkView(location.href);
     };
     load();
     setTimeout(load, 100);

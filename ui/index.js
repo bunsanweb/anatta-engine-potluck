@@ -12,10 +12,8 @@ window.addEventListener("load", function (ev) {
     });
     streamer.on("insert", function (entry, id) {
         var cur = document.querySelector("#" + id);
-        Potluck.linkToLinkView(entry.querySelector("h1 a"));
-        Potluck.linkToTagView(entry.querySelector(".tag"));
-        Potluck.addLoadContentEvent(entry);
         main.insertBefore(entry, cur);
+        Potluck.prepareIndex(entry);
     });
     streamer.on("refresh", function (updated) {
         if (firstTime) {

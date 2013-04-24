@@ -2,8 +2,7 @@
 
 window.addEventListener("load", function (ev) {
     var load = function () {
-        var uri = Potluck.tagAgentUri(location.href);
-        Potluck.loadTagView(uri);
+        Potluck.loadTagView(location.href);
     };
     load();
     setTimeout(load, 100);
