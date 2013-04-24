@@ -22,7 +22,7 @@ window.addEventListener("load", function (ev) {
             firstTime = false;
             return;
         }
-        setTimeout(streamer.get("refresh"), updated ? 500 : 1000);
+        //setTimeout(streamer.get("refresh"), updated ? 500 : 1000);
     });
     setTimeout(streamer.get("load"), 0);
     
