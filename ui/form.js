@@ -90,7 +90,7 @@ window.addEventListener("load", function (ev) {
     var personaInit = function () {
         if (!navigator.id) return;
         var onlogin = function (assertion) {
-            var gateway = "/persona/";
+            var gateway = "./persona/";
             var data = "assertion=" + assertion + 
                 "&audience=" + location.href;
             var req = new XMLHttpRequest();
