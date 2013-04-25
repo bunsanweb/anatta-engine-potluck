@@ -1,0 +1,17 @@
+# this is potluck site file example for apache reverse proxy
+#
+# at this example,
+# request for http://{host}/potluck{path}
+# is sending to http://127.0.0.1:8000{path}
+#
+# like,
+# request for http://{host}/potluck/foo
+# is sending to http://127.0.0.1:8000/foo
+#
+# you must set "AllowEncodedSlashes On" at Virtualhost directive
+# for using potluck with apache reverse proxy
+
+<Location /potluck>
+  ProxyPass http://127.0.0.1:8000 nocanon
+  ProxyPassReverse http://127.0.0.1:8000
+</Location>
