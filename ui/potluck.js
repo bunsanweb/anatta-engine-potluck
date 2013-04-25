@@ -192,7 +192,7 @@ var Potluck = (function () {
         );
         entry.style.display = "inline-block";
         entry.parentNode.insertBefore(content, entry.nextSibling);
-        content.appendChild(getPostButton(entry));
+        content.appendChild(getPostButton(entry, isIndex));
     };
 
     var addLoadContentEvent = function (entry, isIndex) {
