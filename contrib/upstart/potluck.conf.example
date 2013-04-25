@@ -1,11 +1,11 @@
 # this is potluck job file example for upstart
 #
-# on booting, upstart execute "node run.js", after starting mongodb
+# on booting, upstart execute "node run.js [port]", after starting mongodb
 #
 # at this example,
-# node path is "/home/potluck/.nodebrew/current/bin/node"
-# and
-# run.js path is "/home/potluck/run.js"
+# node path is "/home/potluck/.nodebrew/current/bin/node",
+# run.js path is "/home/potluck/run.js",
+# port is 60719
 
 description "Potluck"
 
@@ -14,4 +14,4 @@ stop on runlevel [!2345]
 
 console none
 respawn
-exec /home/potluck/.nodebrew/current/bin/node /home/potluck/potluck/run.js
+exec /home/potluck/.nodebrew/current/bin/node /home/potluck/potluck/run.js 60719

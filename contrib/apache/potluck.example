@@ -2,16 +2,16 @@
 #
 # at this example,
 # request for http://{host}/potluck{path}
-# is sending to http://127.0.0.1:8000{path}
+# is sending to http://127.0.0.1:60719{path}
 #
 # like,
 # request for http://{host}/potluck/foo
-# is sending to http://127.0.0.1:8000/foo
+# is sending to http://127.0.0.1:60719/foo
 #
 # you must set "AllowEncodedSlashes On" at Virtualhost directive
 # for using potluck with apache reverse proxy
 
 <Location /potluck>
-  ProxyPass http://127.0.0.1:8000 nocanon
-  ProxyPassReverse http://127.0.0.1:8000
+  ProxyPass http://127.0.0.1:60719 nocanon
+  ProxyPassReverse http://127.0.0.1:60719
 </Location>
