@@ -14,4 +14,6 @@ stop on runlevel [!2345]
 
 console none
 respawn
+env ORB_URI=mongodb://localhost/potluck
+export ORB_URI
 exec /home/potluck/.nodebrew/current/bin/node /home/potluck/potluck/run.js 60719
