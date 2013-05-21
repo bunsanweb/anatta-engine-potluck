@@ -25,7 +25,10 @@ window.addEventListener("load", function (ev) {
         //setTimeout(streamer.get("refresh"), updated ? 500 : 1000);
     });
     setTimeout(streamer.get("load"), 0);
-    
+    var more = document.getElementById("more");
+    more.addEventListener("click", function (ev) {
+        streamer.get("backward")();
+    }, false);
     /*
     setInterval(function () {
         var req = new XMLHttpRequest();
