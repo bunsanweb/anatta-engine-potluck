@@ -132,6 +132,7 @@ var Streamer = (function () {
             action(doc);
         }, false);
         req.open("GET", uri, true);
+        req.setRequestHeader("cache-control", "no-cache");
         req.send();
         return req;
     };
