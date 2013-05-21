@@ -281,7 +281,8 @@ var View = {
         };
         
         var render = function (ev, links) {
-            var pathname = ev.detail.request.location.pathname;
+            //var pathname = ev.detail.request.location.pathname;
+            var pathname = "";
             var doc = document.implementation.createHTMLDocument("index");
             doc.body.innerHTML = document.querySelector("#frame").innerHTML;
             var refresh = doc.createElement("link");
