@@ -118,7 +118,7 @@ var Potluck = (function () {
             }
         });
         Array.prototype.forEach.call(comments, function (comment) {
-            comment.innerHTML = marked(comment.textContent);
+            comment.innerHTML = marked(comment.innerHTML);
         });
     };
 
@@ -144,7 +144,7 @@ var Potluck = (function () {
                 return PR.prettyPrintOne(code, lang);
             }
         });
-        comment.innerHTML = marked(comment.textContent);
+        comment.innerHTML = marked(comment.innerHTML);
         return document.importNode(article, true);
     };
 
