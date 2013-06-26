@@ -114,11 +114,13 @@ var Potluck = (function () {
             breaks: true,
             sanitize: false,
             highlight: function (code, lang) {
-                return PR.prettyPrintOne(code, lang);
+                var conv = document.createElement("div");
+                conv.textContent = code;
+                return PR.prettyPrintOne(conv.innerHTML, lang);
             }
         });
         Array.prototype.forEach.call(comments, function (comment) {
-            comment.innerHTML = marked(comment.innerHTML);
+            comment.innerHTML = marked(comment.textContent);
         });
     };
 
@@ -141,10 +143,12 @@ var Potluck = (function () {
             breaks: true,
             sanitize: false,
             highlight: function (code, lang) {
-                return PR.prettyPrintOne(code, lang);
+                var conv = document.createElement("div");
+                conv.textContent = code;
+                return PR.prettyPrintOne(conv.innerHTML, lang);
             }
         });
-        comment.innerHTML = marked(comment.innerHTML);
+        comment.innerHTML = marked(comment.textContent);
         return document.importNode(article, true);
     };
 
