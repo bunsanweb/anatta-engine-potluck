@@ -38,6 +38,7 @@ var Streamer = (function () {
         try {
             this.events[name].apply(this, args);
         } catch (ex) {
+            console.log(ex);
         }
     };
 

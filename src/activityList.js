@@ -2,7 +2,7 @@
 
 // agent for development 
 window.addEventListener("agent-load", function (ev) {
-    var base = document.querySelector("[rel=base]").href;
+    var base = document.querySelector("[rel=base]").getAttribute("href");
     var index = anatta.engine.link(
         document.querySelector("[rel=index]"), "text/html", anatta.entity);
     
@@ -23,9 +23,11 @@ window.addEventListener("agent-load", function (ev) {
         //console.log("get raw activity index in orb");
         var id = ev.detail.request.location.query.id;
         var page = id ? activity(id) : index;
+        //console.log(page.href());
         return page.get().then(function (entity) {
             //console.log(entity.response.status);
             //console.log(entity.response.text());
+            //console.log(entity.response.status);
             ev.detail.respond(
                 entity.response.status,
                 entity.response.headers,

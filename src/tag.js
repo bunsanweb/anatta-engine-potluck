@@ -1,8 +1,11 @@
 "use strict";
 window.addEventListener("agent-load", function (ev) {
-    var cacheBase = document.querySelector("[rel='cacheBase']").href;
-    var linkBase = document.querySelector("[rel='linkBase']").href;
-    var cacheIndex = document.querySelector("[rel='cacheIndex']").href;
+    var cacheBase =
+            document.querySelector("[rel='cacheBase']").getAttribute("href");
+    var linkBase =
+            document.querySelector("[rel='linkBase']").getAttribute("href");
+    var cacheIndex =
+            document.querySelector("[rel='cacheIndex']").getAttribute("href");
     var cacheTemplate = document.querySelector(".cache");
     var linkTemplate = document.querySelector(".link");
     var indexTemplate = document.querySelector(".index");
@@ -12,7 +15,7 @@ window.addEventListener("agent-load", function (ev) {
     var getConf = (function () {
         var conf = null;
         return function () {
-            if (conf) return anatta.q.resolve(conf);
+            if (conf) return anatta.q(conf);
             var link = anatta.engine.link(
                 document.querySelector("[rel='config']"),
                 "text/html", anatta.entity);
@@ -27,7 +30,7 @@ window.addEventListener("agent-load", function (ev) {
         var orb = null;
         return function (uri) {
             var path = url.resolve(cacheBase, uri);
-            if (orb) return anatta.q.resolve(url.resolve(orb, path));
+            if (orb) return anatta.q(url.resolve(orb, path));
             return getConf().then(function (entity) {
                 orb = entity.first({rel: "orb"}).href();
                 return url.resolve(orb, path);
@@ -56,7 +59,7 @@ window.addEventListener("agent-load", function (ev) {
         };
     })();
 
-    var queue = anatta.q.resolve(null);
+    var queue = anatta.q(null);
     var insert = function (activity) {
         queue = queue.then(function () {
             var tags = getTagTexts(activity, ".tags");
@@ -93,7 +96,8 @@ window.addEventListener("agent-load", function (ev) {
             var cache = status == "200" ? cache.html : createCache(tag);
             return cache;
         }).then(function (cache) {
-            var id = toID("link", activity.querySelector(".src").href);
+            var id = toID("link",
+                          activity.querySelector(".src").getAttribute("href"));
             var updated = false;
             var article = cache.getElementById(id);
             var links = cache.querySelector("#links");
@@ -119,7 +123,7 @@ window.addEventListener("agent-load", function (ev) {
             if (!updated) return;
             return cacheLink.put({
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: cache.outerHTML
+                body: cache.documentElement.outerHTML
             });
         });
     };
@@ -148,7 +152,7 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var createArticle = function (cache, activity) {
-        var uri = activity.querySelector(".src").href;
+        var uri = activity.querySelector(".src").getAttribute("href");
         var tags = activity.querySelector(".tags");
         return getConf().then(function (conf) {
             var tagBase = conf.first(
@@ -228,7 +232,7 @@ window.addEventListener("agent-load", function (ev) {
             return resolveOrb(cacheIndex).then(function (indexUri) {
                 return anatta.engine.link({href: indexUri}).put({
                     headers: {"content-type": "text/html;charset=utf-8"},
-                    body: index.outerHTML
+                    body: index.documentElement.outerHTML
                 });
             });
         });
@@ -338,7 +342,7 @@ window.addEventListener("agent-load", function (ev) {
         var query = ev.detail.request.location.query;
         if (!query.and && !query.or) {
             return getIndex().then(function (index) {
-                respond("200", index.outerHTML);
+                respond("200", index.documentElement.outerHTML);
             });
         }
         var tags = query.and ? query.and.split(" ") : query.or.split(" ");
@@ -354,7 +358,8 @@ window.addEventListener("agent-load", function (ev) {
             return formatDocument(base, title, articles);
         }).then(function (doc) {
             var status = doc ? "200" : "404";
-            var message = doc ? doc.outerHTML : "no link for " + tags;
+            var message = doc ? doc.documentElement.outerHTML :
+                    "no link for " + tags;
             respond(status, message);
         }).fail(function (err) {
             respond("500", "somethind wrong ...\n\n: " + err);

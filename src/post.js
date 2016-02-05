@@ -25,7 +25,7 @@ window.addEventListener("agent-load", function (ev) {
             headers: {
                 "content-type": "text/html;charset=utf-8",
             },
-            body: "<!doctype html>" + doc.outerHTML,
+            body: "<!doctype html>" + doc.documentElement.outerHTML,
         };
         //console.log(form);
         //console.log(message.body);

@@ -19,7 +19,7 @@ window.addEventListener("agent-load", function (ev) {
         };
     })();
     
-    var queue = anatta.q.resolve(null);
+    var queue = anatta.q(null);
     var activityArrived = function (activity) {
         queue = queue.then(function () {
             return Index.get().then(function (index) {
@@ -41,8 +41,7 @@ window.addEventListener("agent-load", function (ev) {
                     "expires": new Date(0).toUTCString(),
                     "pragma": "no-cache",
                 },
-                "<!doctype html>" + view.outerHTML);
-                //view.outerHTML);
+                "<!doctype html>" + view.documentElement.outerHTML);
         });
         //});
     };
@@ -64,7 +63,7 @@ var Conf = {
     get: (function () {
         var conf = null;
         return function () {
-            if (conf) return anatta.q.resolve(conf);
+            if (conf) return anatta.q(conf);
             var confLink = anatta.engine.link(
                 document.querySelector("[rel=config]"),
                 "text/html", anatta.entity
@@ -81,7 +80,7 @@ var Index = {
     getLink: (function () {
         var indexLink = null;
         return function () {
-            if (indexLink) return anatta.q.resolve(indexLink);
+            if (indexLink) return anatta.q(indexLink);
             return Conf.get().then(function (conf) {
                 indexLink = conf.first({rel: "indexCache"});
                 return indexLink;
@@ -95,7 +94,6 @@ var Index = {
                 if (entity.response.status === "200") return entity;
                 return self.put(self.empty());
             }).then(function (entity) {
-                //console.log(entity.html.outerHTML);
                 return entity.html;
             });
         });
@@ -104,7 +102,7 @@ var Index = {
         return this.getLink().then(function (indexLink) {
             var message = {
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: "<!doctype html>" + doc.outerHTML,
+                body: "<!doctype html>" + doc.documentElement.outerHTML,
             };
             return indexLink.put(message);
         });
@@ -173,7 +171,6 @@ var Activity = {
     updateIndex: (function () {
         var updateIndex = function (index, activity) {
             return Conf.get().then(function (conf) {
-                //console.log(activity.outerHTML);
                 var data = entryData(conf, activity);
                 var entry = Index.newEntry(data, index);
                 return Index.updateEntry(index, data.view, entry);
@@ -204,7 +201,7 @@ var Activity = {
         var entryData = function (conf, activity) {
             var linkBase = conf.first({
                 rel: "linkBase"}).html.getAttribute("href");
-            var url = activity.querySelector(".src").href;
+            var url = activity.querySelector(".src").getAttribute("href");
             var view = linkBase + encodeURIComponent(url);
             var id = idFromUri(url);
             var tagText = activity.querySelector(".tags").textContent;
@@ -226,8 +223,6 @@ var View = {
     get: (function () {
         var defaultCount = 20;
         var get = function (ev, index) {
-            //console.log(index.outerHTML);
-            //return index;
             var query = ev.detail.request.location.query;
             if (query.refresh) return getRefresh(ev, index);
             if (query.backward) return getBackward(ev, index);

@@ -1,6 +1,6 @@
 "use strict";
 window.addEventListener("agent-load", function (ev) {
-    var base = document.querySelector("[rel='base']").href;
+    var base = document.querySelector("[rel='base']").getAttribute("href");
     var cacheTemplate = document.querySelector(".cache");
     var commentTemplate = document.querySelector(".comment");
     var url = anatta.builtin.url;
@@ -8,7 +8,7 @@ window.addEventListener("agent-load", function (ev) {
     var getConf = (function () {
         var conf = null;
         return function () {
-            if (conf) return anatta.q.resolve(conf);
+            if (conf) return anatta.q(conf);
             var link = anatta.engine.link(
                 document.querySelector("[rel='config']"),
                 "text/html", anatta.entity);
@@ -23,7 +23,7 @@ window.addEventListener("agent-load", function (ev) {
         var orb = null;
         return function (uri) {
             var path = url.resolve(base, uri);
-            if (orb) return anatta.q.resolve(url.resolve(orb, path));
+            if (orb) return anatta.q(url.resolve(orb, path));
             return getConf().then(function (entity) {
                 orb = entity.first({rel: "orb"}).href();
                 return url.resolve(orb, path);
@@ -52,7 +52,7 @@ window.addEventListener("agent-load", function (ev) {
         };
     })();
 
-    var queue = anatta.q.resolve(null);
+    var queue = anatta.q(null);
     var insert = function (activity) {
         queue = queue.then(function () {
             return getCache(activity).spread(updateCache).spread(putCache);
@@ -71,19 +71,20 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var getCache = function (activity) {
-        var uri = activity.querySelector(".src").href;
+        var uri = activity.querySelector(".src").getAttribute("href");
         var uri_ = encodeURIComponent(uri);
         return resolveOrb(uri_).then(function (cacheUri) {
             return anatta.engine.link({href: cacheUri}).get();
         }).then(function (cache) {
             var status = cache.response.status;
-            var cache = status == "200" ? cache.html : createCache(activity);
-            return [activity, cache];
+            var cacheDoc =
+                    status == "200" ? cache.html : createCache(activity);
+            return [activity, cacheDoc];
         });
     };
 
     var updateCacheTags = function (cache, tags) {
-        if (!tags) return anatta.q.resolve(false);
+        if (!tags) return anatta.q(false);
         var cacheTags = cache.querySelector(".tags");
         var tagText = [cacheTags.textContent, tags.textContent].join(",");
         return linkToTagAgent(cache, tagText).then(function (tagHTML) {
@@ -132,7 +133,7 @@ window.addEventListener("agent-load", function (ev) {
                 id: activity.id,
                 tags: tagHTML,
                 author: doc.querySelector(".author").textContent,
-                identity: doc.querySelector(".author").href,
+                identity: doc.querySelector(".author").getAttribute("href"),
                 date: doc.querySelector(".date").textContent,
                 comment: doc.querySelector(".comment").innerHTML
             };
@@ -145,14 +146,14 @@ window.addEventListener("agent-load", function (ev) {
     };
 
     var putCache = function (activity, cache, updated) {
-        if (!updated) return;
-        var uri = activity.querySelector(".src").href;
+        if (!updated) return anatta.q(true);
+        var uri = activity.querySelector(".src").getAttribute("href");
         var uri_ = encodeURIComponent(uri);
         return resolveOrb(uri_).then(function (cacheUri) {
             var cacheLink = anatta.engine.link({href: cacheUri});
             return cacheLink.put({
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: cache.outerHTML
+                body: cache.documentElement.outerHTML
             });
         });
     };

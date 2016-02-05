@@ -182,7 +182,7 @@ var Potluck = (function () {
         }
         content = document.createElement("article");
         content.id = "content";
-        var root = document.importNode(doc.querySelector(".root"));
+        var root = document.importNode(doc.querySelector(".root"), true);
         var container = root.querySelector("#comments");
         var container_ = container.cloneNode(true);
         formatRoot(entry, root);

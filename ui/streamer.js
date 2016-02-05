@@ -105,7 +105,7 @@ var Streamer = (function () {
             if (!!this.entries.querySelector("#" + entry.id)) return false;
             var pivot = getter(this.entries);
             this.entries.insertBefore(
-                    this.entries.ownerDocument.importNode(entry), pivot);
+                this.entries.ownerDocument.importNode(entry, true), pivot);
             var id = !!pivot ? pivot.id : null;
             this.spawn("insert", this.formatter(entry), id);
             return true;

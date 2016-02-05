@@ -2,8 +2,9 @@
 
 // An agent for managing list of posts
 window.addEventListener("agent-load", function (ev) {
-    var base = document.querySelector("[rel='base']").href;
-    var indexPath = document.querySelector("[rel='index']").href;
+    var base = document.querySelector("[rel='base']").getAttribute("href");
+    var indexPath =
+            document.querySelector("[rel='index']").getAttribute("href");
     var template = document.querySelector(".link");
     var url = anatta.builtin.url;
     var NUM = 5;
@@ -11,7 +12,7 @@ window.addEventListener("agent-load", function (ev) {
     var getConf = (function () {
         var conf = null;
         return function () {
-            if (conf) return anatta.q.resolve(conf);
+            if (conf) return anatta.q(conf);
             var link = anatta.engine.link(
                 document.querySelector("[rel='config']"),
                 "text/html", anatta.entity);
@@ -26,9 +27,10 @@ window.addEventListener("agent-load", function (ev) {
         var orb = null;
         return function (uri) {
             var path = url.resolve(base, uri);
-            if (orb) return anatta.q.resolve(url.resolve(orb, path));
+            if (orb) return anatta.q(url.resolve(orb, path));
             return getConf().then(function (entity) {
                 orb = entity.first({rel: "orb"}).href();
+                //console.log(orb, path, url.resolve(orb, path));
                 return url.resolve(orb, path);
             });
         };
@@ -46,7 +48,9 @@ window.addEventListener("agent-load", function (ev) {
 
     var putToOrb = function (request) {
         var id = generateID();
+        //console.log(id);
         return resolveOrb(id).then(function (uri) {
+            //console.log(uri, request.body);
             return anatta.engine.link({href: uri}).put(request);
         });
     };
@@ -71,12 +75,13 @@ window.addEventListener("agent-load", function (ev) {
             var obj = {
                 id: id,
                 uri: url.format(uriObj),
-                src: article.querySelector(".title").href,
+                src: article.querySelector(".title").getAttribute("href"),
                 title: article.querySelector(".title").textContent,
                 tags: tags ? tags.textContent : "",
                 author: article.querySelector(".author").textContent,
                 date: article.querySelector(".date").textContent
             };
+            //console.log(obj);
             return window.fusion(obj, template, index);
         });
     };
@@ -89,15 +94,17 @@ window.addEventListener("agent-load", function (ev) {
             } else {
                 index = indexEntity.html;
             }
+            //console.log(indexEntity.html.documentElement.outerHTML);
             return [indexEntity, index, toArticle(index, entity)];
         }).spread(function (indexEntity, index, article) {
             var links = index.getElementById("links");
             links.insertBefore(article, links.firstChild);
+            //console.log(index.documentElement.outerHTML);
             return indexEntity.put({
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: index.outerHTML
+                body: index.documentElement.outerHTML
             }).then(function (indexEntity) {
-                return article.querySelector(".href").href;
+                return article.querySelector(".href").getAttribute("href");
             });
         });
     };
@@ -185,7 +192,7 @@ window.addEventListener("agent-load", function (ev) {
             var doc = formatDocument(activities, req.origin().location);
             ev.detail.respond("200", {
                 "content-type": "text/html;charset=utf-8"
-            }, doc.outerHTML);
+            }, doc.documentElement.outerHTML);
         }).fail(function (err) {
             ev.detail.respond("500", {
                 "content-type": "text/html;charset=utf-8"
