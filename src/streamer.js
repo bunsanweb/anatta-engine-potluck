@@ -1,19 +1,18 @@
 "use strict";
 
-var Streamer = (function () {
-    var Streamer = function Streamer(uri, formatter) {
+const Streamer = (function () {
+    const Streamer = function Streamer(uri, formatter) {
         return Object.create(Streamer.prototype, {
             uri: {value: uri},
-            formatter: {value: formatter || function (entry) {
-                return document.importNode(entry, true);
-            }},
+            formatter: {value: formatter ||
+                        (entry => document.importNode(entry, true))},
             links: {value: {refresh: "", backward: ""}},
             ents: {value: []},
             entries: {value: document.createElement("div")},
             events: {value: {
-                clear: function () {},
-                insert: function () {},
-                refresh: function () {}
+                clear: () => {},
+                insert: () => {},
+                refresh: () => {}
             }}
         });
     };
@@ -24,17 +23,17 @@ var Streamer = (function () {
         "uri-pattern": "^.*",
         entity: {
             refresh: {selector: "link[rel='refresh']", value: "href"},
-            backward: {selector: "link[rel='backward']", value: "href"},
+            backward: {selector: "link[rel='backward']", value: "href"}
         }
     }));
 
     Streamer.prototype.on = function (event, handler) {
-        this.events[event] = handler || function () {};
+        this.events[event] = handler || (() => {});
         return this;
     };
 
     Streamer.prototype.spawn = function (name) {
-        var args = Array.prototype.slice.call(arguments, 1);
+        const args = Array.from(arguments).slice(1);
         try {
             this.events[name].apply(this, args);
         } catch (ex) {
@@ -43,86 +42,71 @@ var Streamer = (function () {
     };
 
     Streamer.prototype.get = function (action) {
-        return actions[action].bind(this);
+        return actions[action](this);
     };
 
-    var actions = {
-        load: function () {
-            getHtml(this.uri, handlers.load.bind(this));
+    const actions = {
+        load: (s) => () => getHtml(s.uri, handlers.load(s)),
+        refresh: (s) => () => getHtml(s.links.refresh, handlers.refresh(s)),
+        backward: (s) => () => getHtml(s.links.backward, handlers.backward(s))
+    };
+
+    const handlers = {
+        load: (s) => (entity) => {
+            s.entries.innerHTML = "";
+            s.spawn("clear");
+            s.links.refresh = entity.attr("refresh");
+            s.links.backward = entity.attr("backward");
+            const updated = updates.load(s, entity.html);
+            s.spawn("refresh", updated);
         },
-        refresh: function () {
-            getHtml(this.links.refresh, handlers.refresh.bind(this));
+        refresh: (s) => (entity) => {
+            s.links.refresh = entity.attr("refresh");
+            const updated = updates.refresh(s, entity.html);
+            s.spawn("refresh", updated);
         },
-        backward: function () {
-            getHtml(this.links.backward, handlers.backward.bind(this));
+        backward: (s) => (entity) => {
+            s.links.backward = entity.attr("backward");
+            const updated = updates.backward(s, entity.html);
         }
     };
 
-    var handlers = {
-        load: function (entity) {
-            this.entries.innerHTML = "";
-            this.spawn("clear");
-            this.links.refresh = entity.attr("refresh");
-            this.links.backward = entity.attr("backward");
-            var updated = updates.load.call(this, entity.html);
-            this.spawn("refresh", updated);
+    const updates = {
+        load: (s, doc) => {
+            const articles = doc.querySelectorAll("body > div > article");
+            return Array.from(articles).reduce(
+                (updated, article) =>
+                    updates.insert(s, article, () => {}) || updated, false);
         },
-        refresh: function (entity) {
-            this.links.refresh = entity.attr("refresh");
-            var updated = updates.refresh.call(this, entity.html);
-            this.spawn("refresh", updated);
+        refresh: (s, doc) => {
+            const articles = Array.from(
+                doc.querySelectorAll("body > div > article"));
+            articles.reverse();
+            return articles.reduce(
+                (updated, article) => 
+                    updates.insert(s, article, elem => elem.firstChild) ||
+                    updated, false);
         },
-        backward: function (entity) {
-            this.links.backward = entity.attr("backward");
-            var updated = updates.backward.call(this, entity.html);
-        }
-    };
-
-    var updates = {
-        load: function (doc) {
-            var updated = false;
-            var articles = doc.querySelectorAll("body > div > article");
-            Array.prototype.forEach.call(articles, function (article) {
-                updated = updates.insert.call(this, article, function () {});
-            }, this);
-            return updated;
+        backward: (s, doc) => {
+            const articles = doc.querySelectorAll("body > div > article");
+            return Array.from(articles).reduce(
+                (updated, article) =>
+                    updates.insert(s, article, () => {}) || updated, false);
         },
-        refresh: function (doc) {
-            var updated = false;
-            var articles = doc.querySelectorAll("body > div > article");
-            var articles_ = Array.prototype.slice.call(articles);
-            articles_.reverse();
-            articles_.forEach(function (article) {
-                updated = updates.insert.call(this, article, function (elem) {
-                    return elem.firstChild;
-                });
-            }, this);
-            return updated;
-        },
-        backward: function (doc) {
-            var updated = false;
-            var articles = doc.querySelectorAll("body > div > article");
-            Array.prototype.forEach.call(articles, function (article) {
-                updated = updates.insert.call(this, article, function () {});
-            }, this);
-            return updated;
-        },
-        insert: function (article, getter) {
-            if (!!this.entries.querySelector("#" + article.id)) return false;
-            var pivot = getter(this.entries);
-            var doc = this.entries.ownerDocument;
-            this.entries.insertBefore(doc.importNode(article, true), pivot);
-            //var id = !!pivot ? pivot.id : null;
-            this.spawn("insert", this.formatter(article));
+        insert: (s, article, getter) => {
+            if (!!s.entries.querySelector(`#${article.id}`)) return false;
+            const pivot = getter(s.entries);
+            const doc = s.entries.ownerDocument;
+            s.entries.insertBefore(doc.importNode(article, true), pivot);
+            const id = !!pivot ? pivot.id : null;
+            s.spawn("insert", s.formatter(article), id);
             return true;
         }
     };
 
-    var getHtml = function (uri, action) {
+    const getHtml = function (uri, action) {
         if (!uri) return;
-        anatta.engine.link({href: uri}).get().then(function (entity) {
-            action(entity);
-        });
+        anatta.engine.link({href: uri}).get().then(action);
     };
 
     return Streamer;

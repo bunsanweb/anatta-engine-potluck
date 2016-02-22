@@ -1,19 +1,18 @@
 "use strict";
 
-var Streamer = (function () {
-    var Streamer = function Streamer(uri, formatter) {
+const Streamer = (function () {
+    const Streamer = function Streamer(uri, formatter) {
         return Object.create(Streamer.prototype, {
             uri: {value: uri},
-            formatter: {value: formatter || function (entry) {
-                return document.importNode(entry, true);
-            }},
+            formatter: {value: formatter ||
+                        (entry => document.importNode(entry, true))},
             links: {value: {refresh: "", backward: ""}},
             ents: {value: []},
             entries: {value: document.createElement("div")},
             events: {value: {
-                clear: function () {},
-                insert: function () {},
-                refresh: function () {}
+                clear: () => {},
+                insert: () => {},
+                refresh: () => {}
             }},
             selectors: {value: {
                 entries: "article",
@@ -24,109 +23,98 @@ var Streamer = (function () {
     };
 
     Streamer.prototype.on = function (event, handler) {
-        this.events[event] = handler || function () {};
+        this.events[event] = handler || (() => {});
         return this;
     };
 
     Streamer.prototype.spawn = function (name) {
-        var args = Array.prototype.slice.call(arguments, 1);
+        const args = Array.from(arguments).slice(1);
         try {
             this.events[name].apply(this, args);
         } catch (ex) {
+            console.log(ex);
         }
     };
 
     Streamer.prototype.get = function (action) {
-        return actions[action].bind(this);
+        return actions[action](this);
     };
 
-    var actions = {
-        load: function () {
-            getHtml(this.uri, handlers.load.bind(this));
+    const actions = {
+        load: (s) => () => getHtml(s.uri, handlers.load(s)),
+        refresh: (s) => () => getHtml(s.links.refresh, handlers.refresh(s)),
+        backward: (s) => () => getHtml(s.links.backward, handlers.backward(s))
+    };
+
+    const handlers = {
+        load: (s) => (doc) => {
+            s.entries.innerHTML = "";
+            s.spawn("clear");
+            s.links.refresh = getHref(doc, s.selectors.refresh);
+            s.links.backward = getHref(doc, s.selectors.backward);
+            const entries = doc.querySelectorAll(s.selectors.entries);
+            const updated = updates.load(s, entries);
+            s.spawn("refresh", updated);
         },
-        refresh: function () {
-            getHtml(this.links.refresh, handlers.refresh.bind(this));
+        refresh: (s) => (doc) => {
+            s.links.refresh = getHref(doc, s.selectors.refresh);
+            const entries = doc.querySelectorAll(s.selectors.entries);
+            const updated = updates.refresh(s, entries);
+            s.spawn("refresh", updated);
         },
-        backward: function () {
-            getHtml(this.links.backward, handlers.backward.bind(this));
+        backward: (s) => (doc) => {
+            s.links.backward = getHref(doc, s.selectors.backward);
+            const entries = doc.querySelectorAll(s.selectors.entries);
+            const updated = updates.backward(s, entries);
+            s.spawn("refresh", updated);
         }
     };
 
-    var handlers = {
-        load: function (doc) {
-            this.entries.innerHTML = "";
-            this.spawn("clear");
-            this.links.refresh = getHref(doc, this.selectors.refresh);
-            this.links.backward = getHref(doc, this.selectors.backward);
-            var entries = doc.querySelectorAll(this.selectors.entries);
-            var updated = updates.load.call(this, entries);
-            this.spawn("refresh", updated);
+    const updates = {
+        load: function (s, entries) {
+            return Array.from(entries).reduce(
+                (updated, entry) =>
+                    updates.insert(s, entry, () => {}) || updated, false);
         },
-        refresh: function (doc) {
-            this.links.refresh = getHref(doc, this.selectors.refresh);
-            var entries = doc.querySelectorAll(this.selectors.entries);
-            var updated = updates.refresh.call(this, entries);
-            this.spawn("refresh", updated);
-        },
-        backward: function (doc) {
-            this.links.backward = getHref(doc, this.selectors.backward);
-            var entries = doc.querySelectorAll(this.selectors.entries);
-            var updated = updates.backward.call(this, entries);
-        }
-    };
-
-    var updates = {
-        load: function (entries) {
-            var updated = false;
-            Array.prototype.forEach.call(entries, function (entry) {
-                updated = updates.insert.call(this, entry, function () {});
-            }, this);
-            return updated;
-        },
-        refresh: function (entries) {
-            var updated = false;
-            var entries_ = Array.prototype.slice.call(entries);
+        refresh: function (s, entries) {
+            const entries_ = Array.from(entries);
             entries_.reverse();
-            Array.prototype.forEach.call(entries_, function (entry) {
-                updated = updates.insert.call(this, entry, function (cont) {
-                    return cont.firstChild;
-                });
-            }, this);
-            return updated;
+            return entries_.reduce(
+                (updated, entry) =>
+                    updates.insert(s, entry, cont => cont.firstChild) ||
+                    updated, false);
         },
-        backward: function (entries) {
-            var updated = false;
-            Array.prototype.forEach.call(entries, function (entry) {
-                updated = updates.insert.call(this, entry, function () {});
-            }, this);
-            return updated;
+        backward: function (s, entries) {
+            Array.from(entries).reduce(
+                (updated, entry) => 
+                    updates.insert(s, entry, () => {}) || updated, false);
         },
-        insert: function (entry, getter) {
-            if (!!this.entries.querySelector("#" + entry.id)) return false;
-            var pivot = getter(this.entries);
-            this.entries.insertBefore(
-                this.entries.ownerDocument.importNode(entry, true), pivot);
-            var id = !!pivot ? pivot.id : null;
-            this.spawn("insert", this.formatter(entry), id);
+        insert: function (s, entry, getter) {
+            if (!!s.entries.querySelector(`#${entry.id}`)) return false;
+            const pivot = getter(s.entries);
+            s.entries.insertBefore(
+                s.entries.ownerDocument.importNode(entry, true), pivot);
+            const id = !!pivot ? pivot.id : null;
+            s.spawn("insert", s.formatter(entry), id);
             return true;
         }
     };
 
-    var parseHtml = function (html) {
-        var doc = document.implementation.createHTMLDocument("");
+    const parseHtml = (html) => {
+        const doc = document.implementation.createHTMLDocument("");
         doc.documentElement.innerHTML = html;
         return doc;
     };
 
-    var getHtml = function (uri, action) {
-        if (!uri) return;
-        var req = new XMLHttpRequest();
-        req.addEventListener("load", function (ev) {
-            var doc = parseHtml(req.responseText);
+    const getHtml = (uri, action) => {
+        if (!uri) return null;
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", ev => {
+            const doc = parseHtml(req.responseText);
             // fix for href attr
-            var link = document.createElement("link");
+            const link = document.createElement("link");
             link.href = uri;
-            var base = doc.createElement("base");
+            const base = doc.createElement("base");
             base.href = link.href;
             doc.head.appendChild(base);
             action(doc);
@@ -137,8 +125,8 @@ var Streamer = (function () {
         return req;
     };
 
-    var getHref = function (doc, selector) {
-        var elem = doc.querySelector(selector);
+    const getHref = (doc, selector) => {
+        const elem = doc.querySelector(selector);
         return elem ? elem.href : "";
     };
 
