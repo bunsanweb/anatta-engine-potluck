@@ -1,7 +1,8 @@
 "use strict";
 
-window.addEventListener("load", function (ev) {
-    var bookmarkletFunc = function (formUrl) {
+window.addEventListener("load", ev => {
+    // Keep ES5 syntax for bookmarklet source
+    const bookmarkletFunc = function (formUrl) {
         var url = window.location.href;
         var title = document.title;
         var tags = [];
@@ -27,79 +28,74 @@ window.addEventListener("load", function (ev) {
             "comment=" + encodeURIComponent(quote);
         window.open(href);
     };
-    var bookmarkletCode = function () {
-        var formUrl = location.href.replace(/#.*$/, "");
-        return "javascript:(" + bookmarkletFunc.toString() + ')("' + 
-            formUrl + '")';
+    const bookmarkletCode = () => {
+        const formUrl = location.href.replace(/#.*$/, "");
+        return `javascript:(${bookmarkletFunc.toString()})("${formUrl}")`;
     };
     
-    var inputs = {
+    const inputs = {
         url: document.getElementById("url"),
         title: document.getElementById("title"),
         tags: document.getElementById("tags"),
         identity: document.getElementById("identity"),
         author: document.getElementById("author"),
-        comment: document.getElementById("comment"),
+        comment: document.getElementById("comment")
     };
     
-    var loadContentFromHash = function () {
-        var hashPos = location.href.indexOf("#");
+    const loadContentFromHash = () => {
+        const hashPos = location.href.indexOf("#");
         if (hashPos < 0) return;
-        var kvs = location.href.substring(hashPos + 1);
-        kvs.split(/&/).forEach(function (kv) {
-            var index = kv.indexOf("=");
-            var key = kv.substring(0, index);
-            var value = kv.substring(index + 1);
+        const kvs = location.href.substring(hashPos + 1);
+        kvs.split(/&/).forEach(kv => {
+            const index = kv.indexOf("=");
+            const key = kv.substring(0, index);
+            const value = kv.substring(index + 1);
             if (Object.prototype.hasOwnProperty.call(inputs, key)) {
                 inputs[key].value = decodeURIComponent(value);
             }
         });
     };
     
-    var loadId = function () {
-        var identity = window.localStorage.getItem("identity");
-        var author = window.localStorage.getItem("author");
+    const loadId = () => {
+        const identity = window.localStorage.getItem("identity");
+        const author = window.localStorage.getItem("author");
         if (identity) inputs.identity.value = identity;
         if (author) inputs.author.value = author;
     };
-    var storeId = function () {
+    const storeId = () => {
         window.localStorage.setItem("identity", inputs.identity.value);
         window.localStorage.setItem("author", inputs.author.value);
     };
 
-    var doPost = function (ev) {
+    const doPost = (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        var postUri = "./post/";
-        var form = new FormData();
-        Object.keys(inputs).forEach(function (key) {
-            form.append(key, inputs[key].value);
-        });
-        var req = new XMLHttpRequest();
-        req.addEventListener("load", onLoad.bind(req), false);
+        const postUri = "./post/";
+        const form = new FormData();
+        Object.keys(inputs).forEach(
+            key => form.append(key, inputs[key].value));
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", onLoad, false);
         req.open("POST", postUri, true);
         req.send(form);
     };
-    var onLoad = function (ev) {
+    const onLoad = (ev) => {
         storeId();
-        setTimeout(function () {
-            window.location.href = "./";
-        }, 300);
+        setTimeout(() => window.location.href = "./", 300);
     };
     
-    var personaInit = function () {
+    const personaInit = () => {
         if (!navigator.id) return;
-        var onlogin = function (assertion) {
-            var gateway = "./persona/";
-            var data = "assertion=" + assertion + 
-                "&audience=" + location.href;
-            var req = new XMLHttpRequest();
-            req.addEventListener("load", function (ev) {
+        var onlogin = (assertion) => {
+            const gateway = "./persona/";
+            const data = `assertion=${assertion}&audience=${location.href}`;
+            const req = new XMLHttpRequest();
+            req.addEventListener("load", ev => {
                 var data = JSON.parse(req.responseText);
                 inputs.identity.value = "persona:" + data.email;
-                inputs.author.value = data.email
+                inputs.author.value = data.email;
             }, false);
-            req.addEventListener("error", function (ev) {
+            req.addEventListener("error", ev => {
                 navigator.id.logout();
             }, false);
             req.open("POST", gateway, true);
@@ -109,16 +105,16 @@ window.addEventListener("load", function (ev) {
         };
         navigator.id.watch({
             onlogin: onlogin,
-            onlogout: function () {},
+            onlogout: function () {}
         });
-        var button = document.querySelector("#persona-signin");
-        if (button) button.addEventListener("click", function (ev) {
+        const button = document.querySelector("#persona-signin");
+        if (button) button.addEventListener("click", ev => {
             navigator.id.request();
         }, false);
     };
     
     // init
-    var bookmarkletLink = document.querySelector("#bookmarklet");
+    const bookmarkletLink = document.querySelector("#bookmarklet");
     if (bookmarkletLink) bookmarkletLink.href = bookmarkletCode();
     loadContentFromHash();
     loadId();
