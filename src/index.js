@@ -1,11 +1,11 @@
 "use strict";
 
-window.addEventListener("agent-load", function (ev) {
-    var refresh = (function () {
-        var streamer = null;
-        var initOrRefreshStreamer = function (conf) {
+window.addEventListener("agent-load", ev => {
+    const refresh = (() => {
+        let streamer = null;
+        const initOrRefreshStreamer = (conf) => {
             if (!streamer) {
-                var watchUri = conf.first({rel: "activities"}).href();
+                const watchUri = conf.first({rel: "activities"}).href();
                 streamer = new Streamer(watchUri);
                 streamer.on("insert", activityArrived);
                 streamer.get("load")();
@@ -14,42 +14,34 @@ window.addEventListener("agent-load", function (ev) {
             }
             return streamer;
         };
-        return function () {
-            return Conf.get().then(initOrRefreshStreamer);
-        };
+        return () => Conf.get().then(initOrRefreshStreamer);
     })();
     
-    var queue = anatta.q(null);
-    var activityArrived = function (activity) {
-        queue = queue.then(function () {
-            return Index.get().then(function (index) {
-                return Activity.updateIndex(index, activity);
-            }).then(Index.put.bind(Index));
-        });
+    let queue = Promise.resolve(null);
+    const activityArrived = (activity) => {
+        queue = queue.then(() => Index.get()).then(
+            index => Activity.updateIndex(index, activity)
+        ).then(doc => Index.put(doc));
     };
-    var get = function (ev) {
-        //queue = queue.then(function () {
-        return Index.get().then(function (index) {
-            var view = View.get(ev, index);
-            return ev.detail.respond(
-                "200", {
-                    "content-type": "text/html;charset=utf-8",
-                    // for demo
-                    "cache-control": [
-                        "no-store", "no-cache",
-                        "max-age=0", "must-revalidate"].join(", "),
-                    "expires": new Date(0).toUTCString(),
-                    "pragma": "no-cache",
-                },
-                "<!doctype html>" + view.documentElement.outerHTML);
-        });
-        //});
-    };
+    const get = (ev) => Index.get().then(index => {
+        const view = View.get(ev, index);
+        return ev.detail.respond(
+            "200", {
+                "content-type": "text/html;charset=utf-8",
+                // for demo
+                "cache-control": [
+                    "no-store", "no-cache",
+                    "max-age=0", "must-revalidate"].join(", "),
+                "expires": new Date(0).toUTCString(),
+                "pragma": "no-cache"
+            },
+            `<!doctype html>${view.documentElement.outerHTML}`);
+    });
     
     // init
-    window.addEventListener("agent-access", function (ev) {
+    window.addEventListener("agent-access", ev => {
         ev.detail.accept();
-        refresh().then(function (streamer) {
+        refresh().then(streamer => {
             if (ev.detail.request.method === "GET") {
                 return get(ev);
             }
@@ -59,78 +51,75 @@ window.addEventListener("agent-load", function (ev) {
     refresh();
 }, false);
 
-var Conf = {
-    get: (function () {
-        var conf = null;
-        return function () {
-            if (conf) return anatta.q(conf);
-            var confLink = anatta.engine.link(
+const Conf = {
+    get: (() => {
+        let conf = null;
+        return () => {
+            if (conf) return Promise.resolve(conf);
+            const confLink = anatta.engine.link(
                 document.querySelector("[rel=config]"),
                 "text/html", anatta.entity
             );
-            return confLink.get().then(function (entity) {
+            return confLink.get().then(entity => {
                 conf = entity;
                 return conf;
             });
         };
-    })(),
+    })()
 };
 
-var Index = {
-    getLink: (function () {
-        var indexLink = null;
-        return function () {
-            if (indexLink) return anatta.q(indexLink);
-            return Conf.get().then(function (conf) {
+const Index = {
+    getLink: (() => {
+        let indexLink = null;
+        return () => {
+            if (indexLink) return Promise.resolve(indexLink);
+            return Conf.get().then(conf => {
                 indexLink = conf.first({rel: "indexCache"});
                 return indexLink;
             });
         };
     })(),
     get: function () {
-        var self = this;
-        return self.getLink().then(function (indexLink) {
-            return indexLink.get().then(function (entity) {
+        const self = this;
+        return self.getLink().then(indexLink => indexLink.get()).then(
+            entity => {
                 if (entity.response.status === "200") return entity;
                 return self.put(self.empty());
-            }).then(function (entity) {
-                return entity.html;
-            });
-        });
+            }).then(entity => entity.html);
     },
     put: function (doc) {
-        return this.getLink().then(function (indexLink) {
-            var message = {
+        return this.getLink().then(indexLink => {
+            const message = {
                 headers: {"content-type": "text/html;charset=utf-8"},
-                body: "<!doctype html>" + doc.documentElement.outerHTML,
+                body: `<!doctype html>${doc.documentElement.outerHTML}`
             };
             return indexLink.put(message);
         });
     },
     empty: function () {
-        var doc = document.implementation.createHTMLDocument("index");
+        const doc = document.implementation.createHTMLDocument("index");
         doc.body.innerHTML = document.querySelector("#frame").innerHTML;
         return doc;
     },
     newEntry: function (data, index) {
-        var template = document.querySelector("#article article");
+        const template = document.querySelector("#article article");
         return window.fusion(data, template, index);
     },
-    updateEntry: (function () {
-        var updateEntry = function (index, view, entry) {
-            entry = mergeOldEntry(index, view, entry);
-            if (entry) insertEntry(index, entry);
+    updateEntry: (() => {
+        const updateEntry = (index, view, entry) => {
+            const merged = mergeOldEntry(index, view, entry);
+            if (merged) insertEntry(index, merged);
             return index;
         };
-        var mergeOldEntry = function (index, view, entry) {
-            var existed = index.querySelector("article#" + entry.id);
+        const mergeOldEntry = (index, view, entry) => {
+            const existed = index.querySelector(`article#${entry.id}`);
             if (!existed) return entry;
-            var dateEntry = entry.querySelector(".updated").textContent;
-            var dateExisted = existed.querySelector(".updated").textContent;
-            var isNewer = Util.dateLessThan(dateExisted, dateEntry);
-            var newer = isNewer ? entry : existed;
-            var older = isNewer ? existed: entry;
-            var merged = tagMerge(
+            const dateEntry = entry.querySelector(".updated").textContent;
+            const dateExisted = existed.querySelector(".updated").textContent;
+            const isNewer = Util.dateLessThan(dateExisted, dateEntry);
+            const newer = isNewer ? entry : existed;
+            const older = isNewer ? existed: entry;
+            const merged = tagMerge(
                 newer.querySelectorAll(".tag > a"),
                 older.querySelectorAll(".tag > a"));
             newer.querySelector(".tag").innerHTML = merged;
@@ -138,13 +127,12 @@ var Index = {
             existed.parentNode.removeChild(existed);
             return entry;
         };
-        var insertEntry = function (index, entry) {
-            var entries = index.querySelectorAll("article.link");
-            var updated = entry.querySelector(".updated").textContent;
-            for (var i = 0; i < entries.length; i++) {
-                var cur = entries[i];
-                var cupdated = cur.querySelector(".updated").textContent;
-                var isNewer = Util.dateLessThan(cupdated, updated);
+        const insertEntry = (index, entry) => {
+            const entries = index.querySelectorAll("article.link");
+            const updated = entry.querySelector(".updated").textContent;
+            for (let cur of entries) {
+                const cupdated = cur.querySelector(".updated").textContent;
+                const isNewer = Util.dateLessThan(cupdated, updated);
                 if (isNewer) {
                     cur.parentNode.insertBefore(entry, cur);
                     return index;
@@ -153,159 +141,151 @@ var Index = {
             index.querySelector("main").appendChild(entry);
             return index;
         };
-        var tagMerge = function (newerTagAnchors, olderTagAnchors) {
-            var tagAnchorHTMLs = [];
-            [newerTagAnchors, olderTagAnchors].forEach(function (tagAs) {
-                Array.prototype.forEach.call(tagAs, function (tagA) {
-                    tagAnchorHTMLs.push(tagA.outerHTML);
-                });
-            });
-            var merged = Util.uniq(tagAnchorHTMLs.sort());
+        const tagMerge = (newerTagAnchors, olderTagAnchors) => {
+            const tagAnchorHTMLs = [];
+            for (let tagAs of [newerTagAnchors, olderTagAnchors]) {
+                for (let tagA of tagAs) tagAnchorHTMLs.push(tagA.outerHTML);
+            }
+            const merged = Util.uniq(tagAnchorHTMLs.sort());
             return merged.join(", ");
         };
         return updateEntry;
-    })(),
+    })()
 };
 
-var Activity = {
-    updateIndex: (function () {
-        var updateIndex = function (index, activity) {
-            return Conf.get().then(function (conf) {
-                var data = entryData(conf, activity);
-                var entry = Index.newEntry(data, index);
-                return Index.updateEntry(index, data.view, entry);
-            });
-        };
+const Activity = {
+    updateIndex: (() => {
+        const updateIndex = (index, activity) => Conf.get().then(conf => {
+            const data = entryData(conf, activity);
+            const entry = Index.newEntry(data, index);
+            return Index.updateEntry(index, data.view, entry);
+        });
         
-        var idFromUri = function (uri) {
-            var head = "link-";
-            return head + Array.prototype.slice.call(uri).map(function (ch) {
-                return ch.charCodeAt(0).toString(16);
-            }).join("");
+        const idFromUri = (uri) => {
+            const head = "link-";
+            const tail = Array.from(
+                uri, ch => ch.charCodeAt(0).toString(16)).join("");
+            return `${head}${tail}`;
         };
 
-        var toAnchorTexts = function (conf, tagText) {
-            var tagBase = conf.first({
+        const toAnchorTexts = (conf, tagText) => {
+            const tagBase = conf.first({
                 rel: "tagBase"}).html.getAttribute("href");
-            var tagAnchors = [];
-            tagText.split(",").forEach(function (tag) {
-                var tag_ = tag.trim();
-                var a = document.createElement("a");
-                a.href = tagBase + "?or=" + tag_;
+            return tagText.split(",").map(tag => {
+                const tag_ = tag.trim();
+                const a = document.createElement("a");
+                a.href = `${tagBase}?or=${tag_}`;
                 a.textContent = tag_;
-                tagAnchors.push(a.outerHTML);
-            });
-            return tagAnchors.join(", ");
+                return a.outerHTML;
+            }).join(", ");
         };
         
-        var entryData = function (conf, activity) {
-            var linkBase = conf.first({
+        const entryData = (conf, activity) => {
+            const linkBase = conf.first({
                 rel: "linkBase"}).html.getAttribute("href");
-            var url = activity.querySelector(".src").getAttribute("href");
-            var view = linkBase + encodeURIComponent(url);
-            var id = idFromUri(url);
-            var tagText = activity.querySelector(".tags").textContent;
-            var tagAnchorText = toAnchorTexts(conf, tagText);
+            const url = activity.querySelector(".src").getAttribute("href");
+            const view = `${linkBase}${encodeURIComponent(url)}`;
+            const id = idFromUri(url);
+            const tagText = activity.querySelector(".tags").textContent;
+            const tagAnchorText = toAnchorTexts(conf, tagText);
             return {
                 id: id,
                 url: url,
                 view: view,
                 title: activity.querySelector(".title").textContent,
                 tags: tagAnchorText,
-                updated: activity.querySelector(".date").textContent,
+                updated: activity.querySelector(".date").textContent
             };
         };
         return updateIndex;
-    })(),
+    })()
 };
 
-var View = {
-    get: (function () {
-        var defaultCount = 20;
-        var get = function (ev, index) {
-            var query = ev.detail.request.location.query;
+const View = {
+    get: (() => {
+        const defaultCount = 20;
+        const get = (ev, index) => {
+            const query = ev.detail.request.location.query;
             if (query.refresh) return getRefresh(ev, index);
             if (query.backward) return getBackward(ev, index);
             return getHead(ev, index);
         };
         
-        var getHead = function (ev, index) {
-            var query = ev.detail.request.location.query;
-            var count = query.count || defaultCount;
-            var entries = index.querySelectorAll("article.link");
-            var list = Array.prototype.slice.call(entries, 0, count);
+        const getHead = (ev, index) => {
+            const query = ev.detail.request.location.query;
+            const count = query.count || defaultCount;
+            const entries = index.querySelectorAll("article.link");
+            const list = Array.from(entries).slice(0, count);
             return render(ev, list);
         };
         
-        var getRefresh = function (ev, index) {
-            var query = ev.detail.request.location.query;
-            var count = query.count || defaultCount;
-            var refresh = query.refresh;
-            var entries = index.querySelectorAll("article.link");
-            for (var i = 0; i < entries.length; i++) {
-                var entry = entries[i];
-                var id = decodeURIComponent(
+        const getRefresh = (ev, index) => {
+            const query = ev.detail.request.location.query;
+            const count = query.count || defaultCount;
+            const refresh = query.refresh;
+            const entries = index.querySelectorAll("article.link");
+            for (let i = 0; i < entries.length; i++) {
+                const entry = entries[i];
+                const id = decodeURIComponent(
                     entry.querySelector("a").getAttribute("href"));
                 if (id === refresh) {
                     // exclude refresh entry
-                    var start = Math.max(0, id - count);
-                    var list = Array.prototype.slice.call(entries, start, i);
+                    const start = Math.max(0, id - count);
+                    const list = Array.from(entries).slice(start, i);
                     return render(ev, list);
                 }
             }
             return getHead(ev, index);
         };
         
-        var getBackward = function (ev, index) {
-            var query = ev.detail.request.location.query;
-            var count = query.count || defaultCount;
-            var backward = query.backward;
-            var entries = index.querySelectorAll("article.link");
-            for (var i = 0; i < entries.length; i++) {
-                var entry = entries[i];
-                var id = decodeURIComponent(
+        const getBackward = (ev, index) => {
+            const query = ev.detail.request.location.query;
+            const count = query.count || defaultCount;
+            const backward = query.backward;
+            const entries = index.querySelectorAll("article.link");
+            for (let i = 0; i < entries.length; i++) {
+                const entry = entries[i];
+                const id = decodeURIComponent(
                     entry.querySelector("a").getAttribute("href"));
                 if (id === backward) {
                     // inlude backward entry
-                    var list = Array.prototype.slice.call(
-                        entries, i, i + count);
+                    const list = Array.from(entries).slice(i, i + count);
                     return render(ev, list);
                 }
             }
             return getHead(ev, index);
         };
         
-        var render = function (ev, links) {
-            //var pathname = ev.detail.request.location.pathname;
-            var pathname = "";
-            var doc = document.implementation.createHTMLDocument("index");
+        const render = (ev, links) => {
+            //const pathname = ev.detail.request.location.pathname;
+            const pathname = "";
+            const doc = document.implementation.createHTMLDocument("index");
             doc.body.innerHTML = document.querySelector("#frame").innerHTML;
-            var refresh = doc.createElement("link");
+            const refresh = doc.createElement("link");
             refresh.rel = "refresh";
             refresh.href = pathname;
             doc.head.appendChild(refresh);
-            var backward = doc.createElement("link");
+            const backward = doc.createElement("link");
             backward.rel = "backward";
             backward.href = pathname;
             doc.head.appendChild(backward);
             if (links.length === 0) return doc;
-            var last = links[0];
-            var first = links[links.length - 1];
+            const last = links[0];
+            const first = links[links.length - 1];
             refresh.href = queryLink(pathname, "refresh", last);
             backward.href = queryLink(pathname, "backward", first);
-            var main = doc.querySelector("main");
-            links.forEach(function (link) {
-                main.appendChild(doc.importNode(link, true));
-            });
+            const main = doc.querySelector("main");
+            links.forEach(
+                link => main.appendChild(doc.importNode(link, true)));
             
             // for debug
             doc.body.appendChild(doc.createElement("hr"));
-            var rlink = doc.createElement("a");
+            const rlink = doc.createElement("a");
             rlink.href = refresh.getAttribute("href");
             rlink.textContent = "refresh";
             doc.body.appendChild(rlink);
             doc.body.appendChild(doc.createTextNode("|"));
-            var blink = doc.createElement("a");
+            const blink = doc.createElement("a");
             blink.href = backward.getAttribute("href");
             blink.textContent = "backward";
             doc.body.appendChild(blink);
@@ -313,29 +293,18 @@ var View = {
             return doc;
         };
         
-        var queryLink = function (pathname, type, link) {
-            return pathname + "?" + type + "=" + 
-                link.querySelector("a").getAttribute("href");
+        const queryLink = (pathname, type, link) => {
+            const href = link.querySelector("a").getAttribute("href");
+            return `${pathname}?${type}=${href}`;
         };
-        
         return get;
-    })(),
+    })()
 };
 
-var Util = {
-    uniq: function (arr) {
-        if (arr.length <= 1) return arr;
-        var prev = arr[0];
-        var ret = [prev];
-        for (var i = 1; i < arr.length; i++) {
-            var cur = arr[i];
-            if (prev === cur) continue;
-            ret.push(cur);
-            prev = cur;
-        }
-        return ret;
-    },
-    dateLessThan: function (a, b) {
-        return new Date(a).getTime() < new Date(b).getTime();
-    },
+const Util = {
+    uniq: (arr) => arr.length <= 1 ? arr : arr.slice(1).reduce((r, cur) => {
+        if (r[r.length - 1] !== cur) r.push(cur);
+        return r;
+    }, [arr[0]]),
+    dateLessThan: (a, b) => new Date(a).getTime() < new Date(b).getTime()
 };

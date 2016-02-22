@@ -2,20 +2,18 @@
 
 //script for agents development
 //note: implement another index.js for real UI
-window.addEventListener("load", function (ev) {
-    var main = document.querySelector("main");
-    var indexUri = "./index/";
-    var firstTime = true;
-    var streamer = Streamer(indexUri);
-    streamer.on("clear", function () {
-        main.innerHTML = "";
-    });
-    streamer.on("insert", function (entry, id) {
-        var cur = document.querySelector("#" + id);
+window.addEventListener("load", ev => {
+    const main = document.querySelector("main");
+    const indexUri = "./index/";
+    let firstTime = true;
+    const streamer = Streamer(indexUri);
+    streamer.on("clear", () => main.innerHTML = "");
+    streamer.on("insert", (entry, id) => {
+        const cur = document.querySelector(`#${id}`);
         main.insertBefore(entry, cur);
         Potluck.prepareIndex(entry);
     });
-    streamer.on("refresh", function (updated) {
+    streamer.on("refresh", updated => {
         if (firstTime) {
             // hack
             setTimeout(streamer.get("refresh"), 100);
@@ -25,18 +23,16 @@ window.addEventListener("load", function (ev) {
         //setTimeout(streamer.get("refresh"), updated ? 500 : 1000);
     });
     setTimeout(streamer.get("load"), 0);
-    var more = document.getElementById("more");
-    more.addEventListener("click", function (ev) {
-        streamer.get("backward")();
-    }, false);
+    const more = document.getElementById("more");
+    more.addEventListener("click", ev => streamer.get("backward")(), false);
     /*
-    setInterval(function () {
-        var req = new XMLHttpRequest();
-        req.addEventListener("load", function (ev) {
-            console.log(this.responseText);
-            var doc = document.implementation.createHTMLDocument("");
+    setInterval(() => {
+        const req = new XMLHttpRequest();
+        req.addEventListener("load", ev => {
+            console.log(ev.target.responseText);
+            const doc = document.implementation.createHTMLDocument("");
             doc.documentElement.innerHTML = this.responseText;
-            var listPart = doc.querySelector(query);
+            const listPart = doc.querySelector(query);
             if (listPart) {
                 main.innerHTML = listPart.innerHTML;
             }
