@@ -1,12 +1,12 @@
 "use strict";
 
 // agent for development 
-window.addEventListener("agent-load", function (ev) {
-    var base = document.querySelector("[rel=base]").getAttribute("href");
-    var index = anatta.engine.link(
+window.addEventListener("agent-load", ev => {
+    const base = document.querySelector("[rel=base]").getAttribute("href");
+    const index = anatta.engine.link(
         document.querySelector("[rel=index]"), "text/html", anatta.entity);
     
-    window.addEventListener("agent-access", function (ev) {
+    window.addEventListener("agent-access", ev => {
         ev.detail.accept();
         switch (ev.detail.request.method) {
         case "GET": return get(ev);
@@ -14,17 +14,17 @@ window.addEventListener("agent-load", function (ev) {
         }
     }, false);
     
-    var activity = function (id) {
-        var uri = anatta.builtin.url.resolve(base, id);
+    const activity = (id) => {
+        const uri = anatta.builtin.url.resolve(base, id);
         return anatta.engine.link({href: uri});
     };
     
-    var get = function (ev) {
+    const get = (ev) => {
         //console.log("get raw activity index in orb");
-        var id = ev.detail.request.location.query.id;
-        var page = id ? activity(id) : index;
+        const id = ev.detail.request.location.query.id;
+        const page = id ? activity(id) : index;
         //console.log(page.href());
-        return page.get().then(function (entity) {
+        return page.get().then(entity => {
             //console.log(entity.response.status);
             //console.log(entity.response.text());
             //console.log(entity.response.status);
@@ -34,5 +34,4 @@ window.addEventListener("agent-load", function (ev) {
                 entity.response.body);
         });
     };
-    
 }, false);
