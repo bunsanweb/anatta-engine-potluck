@@ -5,28 +5,30 @@
 <title>persona signin/out</title>
 <script src="https://login.persona.org/include.js"></script>
 <script>
+"use strict";
+
 navigator.id.watch({
-  onlogin: function (assertion) {
-    var data = "assertion=" + assertion + "&audience=" + location.href;
-    var req = new XMLHttpRequest();
-    req.addEventListener("load", function (ev) {
+  onlogin: (assertion) => {
+    const data = `assertion=${assertion}&audience=${location.href}`;
+    const req = new XMLHttpRequest();
+    req.addEventListener("load", ev => {
       //alert(req.responseText);
-      var data = JSON.parse(req.responseText);
+      const data = JSON.parse(req.responseText);
       //data.status == "okey"
       //data.audience == location.href;
       //alert([data.email, new Date(data.expires)]);
       document.querySelector("#persona-email").textContent = data.email;
     }, false);
-    req.addEventListener("error", function (ev) {
+    req.addEventListener("error", ev => {
       navigator.id.logout();
     }, false);
     req.open("POST", "/persona/", true);
     req.setRequestHeader("content-type", "application/x-www-form-urlencoded");
     req.send(data);
   },
-  onlogout: function () {
+  onlogout: () => {
     document.querySelector("#persona-email").textContent = "";
-  },
+  }
 });
 </script>
 </head>

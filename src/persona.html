@@ -4,21 +4,24 @@
 <meta charset="utf-8" />
 <title>persona gateway</title>
 <script>
-window.addEventListener("agent-access", function (ev) {
+"use strict";
+  
+window.addEventListener("agent-access", ev => {
     ev.detail.accept();
-    var from = ev.detail.request;
+    const from = ev.detail.request;
     if (from.method !== "POST") {
       return ev.detail.respond("405", {allow: "POST"}, "");
     }
-    var verify = "https://verifier.login.persona.org/verify";
+    const verify = "https://verifier.login.persona.org/verify";
     //body: assertion=<coded-data>&audience=<uri-at-browser>
     //console.log(from.text()); 
-    var req = anatta.engine.space.request(
+    const req = anatta.engine.space.request(
         from.method, verify, from.headers, from.body);
-    return anatta.engine.space.access(req).spread(function (req, res) {
-        //console.log(res.text());
-        return ev.detail.respond(res.status, res.headers, res.body);
-    });
+    return anatta.engine.space.access(req).then(a => Promise.all(a)).then(
+        ([req, res]) => {
+            //console.log(res.text());
+            return ev.detail.respond(res.status, res.headers, res.body);
+        });
 }, false);
 </script>
 </head>
