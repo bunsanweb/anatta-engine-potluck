@@ -1,9 +1,7 @@
 "use strict";
 
-window.addEventListener("load", function (ev) {
-    var load = function () {
-        Potluck.loadLinkView(location.href);
-    };
+window.addEventListener("load", ev => {
+    const load = () => Potluck.loadLinkView(location.href);
     load();
     setTimeout(load, 100);
     window.addEventListener("hashchange", load, false);

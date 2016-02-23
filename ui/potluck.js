@@ -98,7 +98,7 @@ const Potluck = (function () {
               linkToView(arg, /\/link\//, "\/l\/#", isIndex);
 
     const linkToTagView = (arg, isIndex) => 
-        linkToView(arg, /\/tag\//, "\/t\/#", isIndex);
+              linkToView(arg, /\/tag\//, "\/t\/#", isIndex);
 
     const markdownComment = (query) => {
         const comments = document.querySelectorAll(query);

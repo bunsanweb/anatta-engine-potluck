@@ -1,135 +1,125 @@
 "use strict";
-window.addEventListener("agent-load", function (ev) {
-    var base = document.querySelector("[rel='base']").getAttribute("href");
-    var cacheTemplate = document.querySelector(".cache");
-    var commentTemplate = document.querySelector(".comment");
-    var url = anatta.builtin.url;
+window.addEventListener("agent-load", ev => {
+    const base = document.querySelector("[rel='base']").getAttribute("href");
+    const cacheTemplate = document.querySelector(".cache");
+    const commentTemplate = document.querySelector(".comment");
+    const url = anatta.builtin.url;
 
-    var getConf = (function () {
-        var conf = null;
-        return function () {
-            if (conf) return anatta.q(conf);
-            var link = anatta.engine.link(
+    const getConf = (() => {
+        let conf = null;
+        return () => {
+            if (conf) return Promise.resolve(conf);
+            const link = anatta.engine.link(
                 document.querySelector("[rel='config']"),
                 "text/html", anatta.entity);
-            return link.get().then(function (entity) {
+            return link.get().then(entity => {
                 conf = entity;
                 return conf;
             });
         };
     })();
 
-    var resolveOrb = (function () {
-        var orb = null;
-        return function (uri) {
-            var path = url.resolve(base, uri);
-            if (orb) return anatta.q(url.resolve(orb, path));
-            return getConf().then(function (entity) {
+    const resolveOrb = (() => {
+        let orb = null;
+        return (uri) => {
+            const path = url.resolve(base, uri);
+            if (orb) return Promise.resolve(url.resolve(orb, path));
+            return getConf().then(entity => {
                 orb = entity.first({rel: "orb"}).href();
                 return url.resolve(orb, path);
             });
         };
     })();
 
-    var refresh = (function () {
-        var streamer = null;
-        return function () {
-            return getConf().then(function (conf) {
-                if (streamer) {
-                    streamer.get("refresh")();
-                } else {
-                    var uri = conf.first({rel: "activities"}).href();
-                    streamer = new Streamer(uri);
-                    streamer.on("insert", insert);
-                    streamer.on("refresh", function (updated) {
-                        return setTimeout(streamer.get("refresh"),
-                            updated ? 500 : 5000);
-                    });
-                    streamer.get("load")();
-                }
-                return streamer;
-            });
-        };
+    const refresh = (() => {
+        let streamer = null;
+        return () => getConf().then(conf => {
+            if (streamer) {
+                streamer.get("refresh")();
+            } else {
+                const uri = conf.first({rel: "activities"}).href();
+                streamer = new Streamer(uri);
+                streamer.on("insert", insert);
+                streamer.on("refresh", updated => setTimeout(
+                    streamer.get("refresh"), updated ? 500 : 5000));
+                streamer.get("load")();
+            }
+            return streamer;
+        });
     })();
 
-    var queue = anatta.q(null);
-    var insert = function (activity) {
-        queue = queue.then(function () {
-            return getCache(activity).spread(updateCache).spread(putCache);
-        });
+    let queue = Promise.resolve(null);
+    const insert = (activity) => {
+        queue = queue.then(() => getCache(activity)).
+            then(a => updateCache(...a)).
+            then(a => Promise.all(a)).then(a => putCache(...a));
     };
 
-    var createCache = function (activity) {
-        var src = activity.querySelector(".src");
-        src.textContent = activity.querySelector(".title").textContent;
-        var doc = document.implementation.createHTMLDocument(src.textContent);
-        var cache = doc.importNode(cacheTemplate, true);
-        var cacheTitle = cache.querySelector(".title");
+    const createCache = (activity) => {
+        const src = activity.querySelector(".src");
+        const title = activity.querySelector(".title").textContent;
+        src.textContent = title;
+        const doc = document.implementation.createHTMLDocument(title);
+        const cache = doc.importNode(cacheTemplate, true);
+        const cacheTitle = cache.querySelector(".title");
         cacheTitle.appendChild(doc.importNode(src, true));
         doc.body.innerHTML = cache.innerHTML;
         return doc;
     };
 
-    var getCache = function (activity) {
-        var uri = activity.querySelector(".src").getAttribute("href");
-        var uri_ = encodeURIComponent(uri);
-        return resolveOrb(uri_).then(function (cacheUri) {
-            return anatta.engine.link({href: cacheUri}).get();
-        }).then(function (cache) {
-            var status = cache.response.status;
-            var cacheDoc =
-                    status == "200" ? cache.html : createCache(activity);
+    const getCache = (activity) => {
+        const uri = activity.querySelector(".src").getAttribute("href");
+        return resolveOrb(encodeURIComponent(uri)).then(
+            cacheUri => anatta.engine.link({href: cacheUri}).get()
+        ).then(cache => {
+            const status = cache.response.status;
+            const cacheDoc =
+                      status == "200" ? cache.html : createCache(activity);
             return [activity, cacheDoc];
         });
     };
 
-    var updateCacheTags = function (cache, tags) {
-        if (!tags) return anatta.q(false);
-        var cacheTags = cache.querySelector(".tags");
-        var tagText = [cacheTags.textContent, tags.textContent].join(",");
-        return linkToTagAgent(cache, tagText).then(function (tagHTML) {
+    const updateCacheTags = (cache, tags) => {
+        if (!tags) return Promise.resolve(false);
+        const cacheTags = cache.querySelector(".tags");
+        const tagText = [cacheTags.textContent, tags.textContent].join(",");
+        return linkToTagAgent(cache, tagText).then(tagHTML => {
             cacheTags.innerHTML = tagHTML;
             return true;
         });
     };
 
-    var linkToTagAgent = function (doc, tagText) {
-        return getConf().then(function (conf) {
-            if (!tagText) return "";
-            var tagBase = conf.first(
-                {rel: "tagBase"}).html.getAttribute("href") + "?or=";
-            var tagAnchors = {};
-            tagText.split(",").forEach(function (tag) {
-                var tag_ = tag.trim();
-                if (tag_) {
-                    var a = doc.createElement("a");
-                    a.textContent = tag_;
-                    a.href = tagBase + tag_;
-                    tagAnchors[tag_] = a;
-                }
-            });
-            var tagAnchorHTMLs = [];
-            Object.keys(tagAnchors).sort().forEach(function (tag) {
-                tagAnchorHTMLs.push(tagAnchors[tag].outerHTML);
-            });
-            return tagAnchorHTMLs.join(", ");
-        });
-    };
+    const uniq = (a) => a.length <= 1 ? a : a.reduce((r, e) => {
+        if (r[r.length - 1] !== e) r.push(e);
+        return r;
+    }, [a[0]]);
+    const linkToTagAgent = (doc, tagText) => getConf().then(conf => {
+        if (!tagText) return "";
+        const tagBase = conf.first({rel: "tagBase"}).html.getAttribute("href");
+        const tags = tagText.split(",").map(tag => tag.trim()).
+                  filter(tag => tag !== "").sort();
+        return uniq(tags).map(tag => {
+            const a = doc.createElement("a");
+            a.textContent = tag;
+            a.href = `${tagBase}?or=${tag}`;
+            return a.outerHTML;
+        }).join(", ");
+    });
 
-    var updateCache = function (activity, cache) {
-        var activity_ = cache.getElementById(activity.id);
+    const updateCache = (activity, cache) => {
+        const activity_ = cache.getElementById(activity.id);
         if (!!activity_) return [activity, cache, false];
-        var href = activity.querySelector(".href");
-        var link = anatta.engine.link(href, "text/html", anatta.entity);
-        return link.get().then(function (entity) {
-            var doc = entity.html;
-            var tags = doc.querySelector(".tags");
+        const href = activity.querySelector(".href");
+        const link = anatta.engine.link(href, "text/html", anatta.entity);
+        return link.get().then(entity => {
+            const doc = entity.html;
+            const tags = doc.querySelector(".tags");
             return [doc, updateCacheTags(cache, tags)];
-        }).spread(function (doc, updated) {
-            var tagText = doc.querySelector(".tags").textContent;
+        }).then(a => Promise.all(a)).then(([doc, updated]) => {
+            const tagText = doc.querySelector(".tags").textContent;
             return [doc, linkToTagAgent(doc, tagText)];
-        }).spread(function (doc, tagHTML) {
-            var obj = {
+        }).then(a => Promise.all(a)).then(([doc, tagHTML]) => {
+            const obj = {
                 id: activity.id,
                 tags: tagHTML,
                 author: doc.querySelector(".author").textContent,
@@ -137,20 +127,19 @@ window.addEventListener("agent-load", function (ev) {
                 date: doc.querySelector(".date").textContent,
                 comment: doc.querySelector(".comment").innerHTML
             };
-            var template = commentTemplate.cloneNode(true);
-            var content = window.fusion(obj, template, cache);
-            var comments = cache.querySelector("#comments");
+            const template = commentTemplate.cloneNode(true);
+            const content = window.fusion(obj, template, cache);
+            const comments = cache.querySelector("#comments");
             comments.appendChild(cache.importNode(content, true));
             return [activity, cache, true];
         });
     };
 
-    var putCache = function (activity, cache, updated) {
-        if (!updated) return anatta.q(true);
-        var uri = activity.querySelector(".src").getAttribute("href");
-        var uri_ = encodeURIComponent(uri);
-        return resolveOrb(uri_).then(function (cacheUri) {
-            var cacheLink = anatta.engine.link({href: cacheUri});
+    const putCache = (activity, cache, updated) => {
+        if (!updated) return Promise.resolve(true);
+        const uri = activity.querySelector(".src").getAttribute("href");
+        return resolveOrb(encodeURIComponent(uri)).then(cacheUri => {
+            const cacheLink = anatta.engine.link({href: cacheUri});
             return cacheLink.put({
                 headers: {"content-type": "text/html;charset=utf-8"},
                 body: cache.documentElement.outerHTML
@@ -158,31 +147,31 @@ window.addEventListener("agent-load", function (ev) {
         });
     };
 
-    var get = function (ev) {
-        var path = ev.detail.request.location.path;
-        var uri = path.slice(path.indexOf(base) + base.length);
-        return resolveOrb(uri).then(function (cacheUri) {
-            var cacheLink = anatta.engine.link({href: cacheUri});
+    const get = (ev) => {
+        const path = ev.detail.request.location.path;
+        const uri = path.slice(path.indexOf(base) + base.length);
+        return resolveOrb(uri).then(cacheUri => {
+            const cacheLink = anatta.engine.link({href: cacheUri});
             return cacheLink.get();
-        }).then(function (entity) {
-            var res = entity.response;
+        }).then(entity => {
+            const res = entity.response;
             if (res.status == 200) {
                 ev.detail.respond(res.status, res.headers, res.text());
             } else {
                 ev.detail.respond("404", {
                     "content-type": "text/html;charset=utf-8"
-                }, "there is no comment for " + decodeURIComponent(uri));
+                }, `there is no comment for ${decodeURIComponent(uri)}`);
             }
-        }).fail(function (err) {
+        }).catch(err => {
             ev.detail.respond("500", {
                 "content-type": "text/html;charset=utf-8"
-            }, "something wrong ...\n\n: " + err);
+            }, `something wrong ...${"\n\n"}: ${err}`);
         });
     };
 
-    window.addEventListener("agent-access", function (ev) {
+    window.addEventListener("agent-access", ev => {
         ev.detail.accept();
-        refresh().then(function (streamer) {
+        refresh().then(streamer => {
             if (ev.detail.request.method == "GET") {
                 return get(ev);
             }
