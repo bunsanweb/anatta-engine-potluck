@@ -3,10 +3,10 @@
     "version": "0.2.0",
     "private": true,
     "scripts": {
-        "start": "node --harmony_destructuring --harmony_default_parameters run.js",
+        "start": "node run.js",
         "test": "node ./node_modules/.bin/mocha"
     },
-    "engines": {"node": ">=5.0"},
+    "engines": {"node": ">=6.0"},
     "dependencies": {
         "anatta-engine": "git+ssh://k6.kanata-jp.com/home/ichiyama/projects/anatta-engine.git"
     },
