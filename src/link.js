@@ -1,3 +1,4 @@
+/*global anatta, Streamer*/
 "use strict";
 window.addEventListener("agent-load", ev => {
     const base = document.querySelector("[rel='base']").getAttribute("href");
@@ -74,7 +75,7 @@ window.addEventListener("agent-load", ev => {
         ).then(cache => {
             const status = cache.response.status;
             const cacheDoc =
-                      status == "200" ? cache.html : createCache(activity);
+                      +status === 200 ? cache.html : createCache(activity);
             return [activity, cacheDoc];
         });
     };
@@ -101,14 +102,14 @@ window.addEventListener("agent-load", ev => {
         return uniq(tags).map(tag => {
             const a = doc.createElement("a");
             a.textContent = tag;
-            a.href = `${tagBase}?or=${tag}`;
+            a.setAttribute("href", `${tagBase}?or=${tag}`);
             return a.outerHTML;
         }).join(", ");
     });
 
     const updateCache = (activity, cache) => {
-        const activity_ = cache.getElementById(activity.id);
-        if (!!activity_) return [activity, cache, false];
+        const activity$ = cache.getElementById(activity.id);
+        if (activity$) return [activity, cache, false];
         const href = activity.querySelector(".href");
         const link = anatta.engine.link(href, "text/html", anatta.entity);
         return link.get().then(entity => {
@@ -155,7 +156,7 @@ window.addEventListener("agent-load", ev => {
             return cacheLink.get();
         }).then(entity => {
             const res = entity.response;
-            if (res.status == 200) {
+            if (+res.status === 200) {
                 ev.detail.respond(res.status, res.headers, res.text());
             } else {
                 ev.detail.respond("404", {
@@ -172,7 +173,7 @@ window.addEventListener("agent-load", ev => {
     window.addEventListener("agent-access", ev => {
         ev.detail.accept();
         refresh().then(streamer => {
-            if (ev.detail.request.method == "GET") {
+            if (ev.detail.request.method === "GET") {
                 return get(ev);
             }
             return ev.detail.respond("405", {allow: "GET"}, "");

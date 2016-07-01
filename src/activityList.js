@@ -1,6 +1,7 @@
+/*global anatta*/
 "use strict";
 
-// agent for development 
+// agent for development
 window.addEventListener("agent-load", ev => {
     const base = document.querySelector("[rel=base]").getAttribute("href");
     const index = anatta.engine.link(

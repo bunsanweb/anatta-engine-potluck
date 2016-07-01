@@ -1,6 +1,7 @@
+/*global marked, PR*/
 "use strict";
 
-const Potluck = (function () {
+window.Potluck = (function build() {
     const getHash = (uri) => {
         const hashPos = uri.indexOf("#");
         return hashPos < 0 ? "" : uri.substring(hashPos + 1);
@@ -86,7 +87,7 @@ const Potluck = (function () {
         const argIsObj = typeof arg === "object";
         const elems = argIsObj ? arg : document.querySelectorAll(arg);
         Array.from(elems).forEach(elem => {
-            const real = elem.getAttribute("href"); 
+            const real = elem.getAttribute("href");
             if (real) {
                 const ui = real.replace(src, dst);
                 elem.setAttribute("href", isIndex ? ui.substring(1) : ui);
@@ -95,11 +96,12 @@ const Potluck = (function () {
     };
 
     const linkToLinkView = (arg, isIndex) =>
-              linkToView(arg, /\/link\//, "\/l\/#", isIndex);
+              linkToView(arg, /\/link\//, "/l/#", isIndex);
 
-    const linkToTagView = (arg, isIndex) => 
-              linkToView(arg, /\/tag\//, "\/t\/#", isIndex);
+    const linkToTagView = (arg, isIndex) =>
+              linkToView(arg, /\/tag\//, "/t/#", isIndex);
 
+    /*
     const markdownComment = (query) => {
         const comments = document.querySelectorAll(query);
         marked.setOptions({
@@ -115,7 +117,8 @@ const Potluck = (function () {
         Array.from(comments).forEach(
             comment => comment.innerHTML = marked(comment.textContent));
     };
-
+     */
+    
     const formatRoot = (entry, article) => {
         const tags = article.querySelector(".tags");
         article.removeChild(tags.parentNode);
@@ -167,19 +170,19 @@ const Potluck = (function () {
         if (content) {
             content.parentNode.removeChild(content);
             const links = document.querySelectorAll("article.link");
-            Array.from(links).forEach(link => link.style.display = "block");
+            Array.from(links).forEach(link => {link.style.display = "block";});
         }
         const newContent = document.createElement("article");
         newContent.id = "content";
         const root = document.importNode(doc.querySelector(".root"), true);
         const container = root.querySelector("#comments");
-        const container_ = container.cloneNode(true);
+        const container$ = container.cloneNode(true);
         formatRoot(entry, root);
         newContent.appendChild(root);
-        const comments = container_.querySelectorAll("article");
+        const comments = container$.querySelectorAll("article");
         Array.from(comments).forEach(comment => {
-            const comment_ = formatComment(entry, comment, isIndex);
-            newContent.appendChild(comment_);
+            const comment$ = formatComment(entry, comment, isIndex);
+            newContent.appendChild(comment$);
         });
         entry.style.display = "inline-block";
         entry.parentNode.insertBefore(newContent, entry.nextSibling);
@@ -198,13 +201,15 @@ const Potluck = (function () {
         }, false);
         entry.addEventListener("click", ev => {
             const articles = document.querySelectorAll("main > article");
-            Array.from(articles).forEach(article => article.style.border = "");
+            Array.from(articles).forEach(article => {
+                article.style.border = "";
+            });
             entry.style.border = "2px solid #898989";
 
             const main = document.querySelector("main");
             let target = entry.nextSibling;
             const expanded = () =>
-                      target && target.id.indexOf(`${entry.id}-`) == 0;
+                      target && target.id.indexOf(`${entry.id}-`) === 0;
             if (expanded()) {
                 while (expanded()) {
                     main.removeChild(target);
@@ -218,9 +223,5 @@ const Potluck = (function () {
         }, false);
     };
 
-    return {
-        loadLinkView: loadLinkView,
-        loadTagView: loadTagView,
-        prepareIndex: prepareIndex
-    };
+    return {loadLinkView, loadTagView, prepareIndex};
 })();

@@ -15,9 +15,9 @@ window.addEventListener("load", ev => {
         if (listPart) {
             main.innerHTML = listPart.innerHTML;
             const linkedList = main.querySelectorAll("[href]");
-            Array.from(linkedList).forEach(
-                link =>
-                    link.href = `${indexUri}?id=${link.getAttribute("href")}`);
+            Array.from(linkedList).forEach(link => {
+                link.href = `${indexUri}?id=${link.getAttribute("href")}`;
+            });
         }
     }, false);
     req.open("GET", indexUri, true);

@@ -1,3 +1,6 @@
+/*eslint no-var: 0, func-names: 0, prefer-reflect: 0,
+         prefer-arrow-callback: 0, prefer-template: 0, curly: 0,
+*/
 "use strict";
 
 window.addEventListener("load", ev => {
@@ -22,7 +25,7 @@ window.addEventListener("load", ev => {
         if (quote) quote = quote.split(/\n/).map(function (line) {
             return "> " + line;
         }).join("\n");
-        var href = formUrl + "#" + "title=" + encodeURIComponent(title) + "&" +
+        var href = formUrl + "#title=" + encodeURIComponent(title) + "&" +
             "url=" + encodeURIComponent(url) + "&" +
             "tags=" + encodeURIComponent(tags.join(", ")) + "&" +
             "comment=" + encodeURIComponent(quote);
@@ -81,7 +84,7 @@ window.addEventListener("load", ev => {
     };
     const onLoad = (ev) => {
         storeId();
-        setTimeout(() => window.location.href = "./", 300);
+        setTimeout(() => {window.location.href = "./";}, 300);
     };
     
     const personaInit = () => {
@@ -104,8 +107,8 @@ window.addEventListener("load", ev => {
             req.send(data);
         };
         navigator.id.watch({
-            onlogin: onlogin,
-            onlogout: function () {}
+            onlogin,
+            onlogout: () => {}
         });
         const button = document.querySelector("#persona-signin");
         if (button) button.addEventListener("click", ev => {

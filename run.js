@@ -1,3 +1,4 @@
+/*eslint quote-props: 0*/
 "use strict";
 
 process.chdir(require("path").dirname(module.filename));

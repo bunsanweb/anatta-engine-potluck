@@ -4,13 +4,15 @@
     "private": true,
     "scripts": {
         "start": "node run.js",
-        "test": "node ./node_modules/.bin/mocha"
+        "eslint": "eslint .",
+        "test": "mocha"
     },
     "engines": {"node": ">=6.0"},
     "dependencies": {
         "anatta-engine": "git+ssh://k6.kanata-jp.com/home/ichiyama/projects/anatta-engine.git"
     },
     "devDependencies": {
+        "eslint": "*",
         "mocha": "*"
     }
 }
