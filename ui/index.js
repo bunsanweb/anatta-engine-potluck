@@ -1,3 +1,4 @@
+/*global Streamer, Potluck*/
 "use strict";
 
 //script for agents development
@@ -7,7 +8,7 @@ window.addEventListener("load", ev => {
     const indexUri = "./index/";
     let firstTime = true;
     const streamer = Streamer(indexUri);
-    streamer.on("clear", () => main.innerHTML = "");
+    streamer.on("clear", () => {main.innerHTML = "";});
     streamer.on("insert", (entry, id) => {
         const cur = document.querySelector(`#${id}`);
         main.insertBefore(entry, cur);
@@ -25,6 +26,7 @@ window.addEventListener("load", ev => {
     setTimeout(streamer.get("load"), 0);
     const more = document.getElementById("more");
     more.addEventListener("click", ev => streamer.get("backward")(), false);
+
     /*
     setInterval(() => {
         const req = new XMLHttpRequest();

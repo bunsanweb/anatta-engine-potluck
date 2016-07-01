@@ -1,5 +1,7 @@
+/*global anatta, Streamer*/
 "use strict";
 
+// Agent for frontpage as the list of posted uris
 window.addEventListener("agent-load", ev => {
     const refresh = (() => {
         let streamer = null;
@@ -19,9 +21,12 @@ window.addEventListener("agent-load", ev => {
     
     let queue = Promise.resolve(null);
     const activityArrived = (activity) => {
+        //console.log("[activityArrived]", activity);
         queue = queue.then(() => Index.get()).then(
             index => Activity.updateIndex(index, activity)
-        ).then(doc => Index.put(doc));
+        ).then(doc => Index.put(doc)).catch(err => {
+            console.log("[activityArrived] error:", err);
+        });
     };
     const get = (ev) => Index.get().then(index => {
         const view = View.get(ev, index);
@@ -32,8 +37,8 @@ window.addEventListener("agent-load", ev => {
                 "cache-control": [
                     "no-store", "no-cache",
                     "max-age=0", "must-revalidate"].join(", "),
-                "expires": new Date(0).toUTCString(),
-                "pragma": "no-cache"
+                expires: new Date(0).toUTCString(),
+                pragma: "no-cache"
             },
             `<!doctype html>${view.documentElement.outerHTML}`);
     });
@@ -79,15 +84,16 @@ const Index = {
             });
         };
     })(),
-    get: function () {
+    get() {
         const self = this;
         return self.getLink().then(indexLink => indexLink.get()).then(
             entity => {
+                //console.log(entity.response.text("utf8"));
                 if (entity.response.status === "200") return entity;
                 return self.put(self.empty());
             }).then(entity => entity.html);
     },
-    put: function (doc) {
+    put(doc) {
         return this.getLink().then(indexLink => {
             const message = {
                 headers: {"content-type": "text/html;charset=utf-8"},
@@ -96,12 +102,12 @@ const Index = {
             return indexLink.put(message);
         });
     },
-    empty: function () {
+    empty() {
         const doc = document.implementation.createHTMLDocument("index");
         doc.body.innerHTML = document.querySelector("#frame").innerHTML;
         return doc;
     },
-    newEntry: function (data, index) {
+    newEntry(data, index) {
         const template = document.querySelector("#article article");
         return window.fusion(data, template, index);
     },
@@ -118,7 +124,7 @@ const Index = {
             const dateExisted = existed.querySelector(".updated").textContent;
             const isNewer = Util.dateLessThan(dateExisted, dateEntry);
             const newer = isNewer ? entry : existed;
-            const older = isNewer ? existed: entry;
+            const older = isNewer ? existed : entry;
             const merged = tagMerge(
                 newer.querySelectorAll(".tag > a"),
                 older.querySelectorAll(".tag > a"));
@@ -130,7 +136,7 @@ const Index = {
         const insertEntry = (index, entry) => {
             const entries = index.querySelectorAll("article.link");
             const updated = entry.querySelector(".updated").textContent;
-            for (let cur of entries) {
+            for (const cur of entries) {
                 const cupdated = cur.querySelector(".updated").textContent;
                 const isNewer = Util.dateLessThan(cupdated, updated);
                 if (isNewer) {
@@ -143,8 +149,8 @@ const Index = {
         };
         const tagMerge = (newerTagAnchors, olderTagAnchors) => {
             const tagAnchorHTMLs = [];
-            for (let tagAs of [newerTagAnchors, olderTagAnchors]) {
-                for (let tagA of tagAs) tagAnchorHTMLs.push(tagA.outerHTML);
+            for (const tagAs of [newerTagAnchors, olderTagAnchors]) {
+                for (const tagA of tagAs) tagAnchorHTMLs.push(tagA.outerHTML);
             }
             const merged = Util.uniq(tagAnchorHTMLs.sort());
             return merged.join(", ");
@@ -156,6 +162,7 @@ const Index = {
 const Activity = {
     updateIndex: (() => {
         const updateIndex = (index, activity) => Conf.get().then(conf => {
+            //console.log("[Activity.updateIndex]",  activity);
             const data = entryData(conf, activity);
             const entry = Index.newEntry(data, index);
             return Index.updateEntry(index, data.view, entry);
@@ -172,10 +179,10 @@ const Activity = {
             const tagBase = conf.first({
                 rel: "tagBase"}).html.getAttribute("href");
             return tagText.split(",").map(tag => {
-                const tag_ = tag.trim();
+                const tag$ = tag.trim();
                 const a = document.createElement("a");
-                a.href = `${tagBase}?or=${tag_}`;
-                a.textContent = tag_;
+                a.setAttribute("href", `${tagBase}?or=${tag$}`);
+                a.textContent = tag$;
                 return a.outerHTML;
             }).join(", ");
         };
@@ -189,9 +196,7 @@ const Activity = {
             const tagText = activity.querySelector(".tags").textContent;
             const tagAnchorText = toAnchorTexts(conf, tagText);
             return {
-                id: id,
-                url: url,
-                view: view,
+                id, url, view,
                 title: activity.querySelector(".title").textContent,
                 tags: tagAnchorText,
                 updated: activity.querySelector(".date").textContent
@@ -263,17 +268,18 @@ const View = {
             doc.body.innerHTML = document.querySelector("#frame").innerHTML;
             const refresh = doc.createElement("link");
             refresh.rel = "refresh";
-            refresh.href = pathname;
+            refresh.setAttribute("href", pathname);
             doc.head.appendChild(refresh);
             const backward = doc.createElement("link");
             backward.rel = "backward";
-            backward.href = pathname;
+            backward.setAttribute("href", pathname);
             doc.head.appendChild(backward);
             if (links.length === 0) return doc;
             const last = links[0];
             const first = links[links.length - 1];
-            refresh.href = queryLink(pathname, "refresh", last);
-            backward.href = queryLink(pathname, "backward", first);
+            refresh.setAttribute("href", queryLink(pathname, "refresh", last));
+            backward.setAttribute(
+                "href", queryLink(pathname, "backward", first));
             const main = doc.querySelector("main");
             links.forEach(
                 link => main.appendChild(doc.importNode(link, true)));
@@ -281,12 +287,12 @@ const View = {
             // for debug
             doc.body.appendChild(doc.createElement("hr"));
             const rlink = doc.createElement("a");
-            rlink.href = refresh.getAttribute("href");
+            rlink.setAttribute("href", refresh.getAttribute("href"));
             rlink.textContent = "refresh";
             doc.body.appendChild(rlink);
             doc.body.appendChild(doc.createTextNode("|"));
             const blink = doc.createElement("a");
-            blink.href = backward.getAttribute("href");
+            blink.setAttribute("href", backward.getAttribute("href"));
             blink.textContent = "backward";
             doc.body.appendChild(blink);
             

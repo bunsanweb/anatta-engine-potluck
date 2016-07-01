@@ -1,3 +1,4 @@
+/*global anatta*/
 "use strict";
 
 // An agent for formatting formdata to "Link Post" HTML
@@ -31,7 +32,7 @@ window.addEventListener("agent-load", ev => {
         //console.log(message.body);
         return postTo(message).then(entity => {
             const uri = entity.response.headers.location;
-            //console.log(uri);
+            console.log("[post]", `form data posted to ${uri}`);
             //console.log([entity.response.status, entity.response.headers]);
             // TBD: 300 redirect or 201 created
             ev.detail.respond("201", {location: uri}, "");

@@ -1,3 +1,4 @@
+/*global Potluck*/
 "use strict";
 
 window.addEventListener("load", ev => {

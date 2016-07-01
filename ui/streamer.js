@@ -1,6 +1,6 @@
 "use strict";
 
-const Streamer = (function () {
+window.Streamer = (function build() {
     const Streamer = function Streamer(uri, formatter) {
         return Object.create(Streamer.prototype, {
             uri: {value: uri},
@@ -22,21 +22,20 @@ const Streamer = (function () {
         });
     };
 
-    Streamer.prototype.on = function (event, handler) {
+    Streamer.prototype.on = function on(event, handler) {
         this.events[event] = handler || (() => {});
         return this;
     };
 
-    Streamer.prototype.spawn = function (name) {
-        const args = Array.from(arguments).slice(1);
+    Streamer.prototype.spawn = function spawn(name, ...args) {
         try {
-            this.events[name].apply(this, args);
+            Reflect.apply(this.events[name], this, args);
         } catch (ex) {
             console.log(ex);
         }
     };
 
-    Streamer.prototype.get = function (action) {
+    Streamer.prototype.get = function get(action) {
         return actions[action](this);
     };
 
@@ -71,30 +70,30 @@ const Streamer = (function () {
     };
 
     const updates = {
-        load: function (s, entries) {
+        load(s, entries) {
             return Array.from(entries).reduce(
                 (updated, entry) =>
                     updates.insert(s, entry, () => {}) || updated, false);
         },
-        refresh: function (s, entries) {
-            const entries_ = Array.from(entries);
-            entries_.reverse();
-            return entries_.reduce(
+        refresh(s, entries) {
+            const entries$ = Array.from(entries);
+            entries$.reverse();
+            return entries$.reduce(
                 (updated, entry) =>
                     updates.insert(s, entry, cont => cont.firstChild) ||
                     updated, false);
         },
-        backward: function (s, entries) {
+        backward(s, entries) {
             Array.from(entries).reduce(
-                (updated, entry) => 
+                (updated, entry) =>
                     updates.insert(s, entry, () => {}) || updated, false);
         },
-        insert: function (s, entry, getter) {
-            if (!!s.entries.querySelector(`#${entry.id}`)) return false;
+        insert(s, entry, getter) {
+            if (s.entries.querySelector(`#${entry.id}`)) return false;
             const pivot = getter(s.entries);
             s.entries.insertBefore(
                 s.entries.ownerDocument.importNode(entry, true), pivot);
-            const id = !!pivot ? pivot.id : null;
+            const id = pivot ? pivot.id : null;
             s.spawn("insert", s.formatter(entry), id);
             return true;
         }

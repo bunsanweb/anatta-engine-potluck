@@ -1,3 +1,4 @@
+/*global anatta*/
 "use strict";
 
 // An agent for managing list of posts
@@ -39,16 +40,15 @@ window.addEventListener("agent-load", ev => {
     const getIndex = () => resolveOrb(indexPath).then(
         indexUri => anatta.engine.link({href: indexUri}).get());
 
+    //NOTE: it should not include "." because of bad `querySelector` id
     const generateID = () =>
-              `activity-${(Math.random() * 0x100000000).toString(16)}`;
+              `activity-${(Math.random() * 0x100000000000000).toString(16)}`;
 
     const putToOrb = (request) => {
         const id = generateID();
         //console.log(id);
-        return resolveOrb(id).then(uri => {
-            //console.log(uri, request.body);
-            return anatta.engine.link({href: uri}).put(request);
-        });
+        return resolveOrb(id).then(
+            uri => anatta.engine.link({href: uri}).put(request));
     };
 
     const createIndex = () => {
@@ -66,9 +66,9 @@ window.addEventListener("agent-load", ev => {
         const root = conf.first({rel: "activities"}).href();
         const uriObj = Object.create(
             url.parse(root, true, true),
-            {query: {value: {id: id}}});
+            {query: {value: {id}}});
         const obj = {
-            id: id,
+            id,
             uri: url.format(uriObj),
             src: article.querySelector(".title").getAttribute("href"),
             title: article.querySelector(".title").textContent,
@@ -81,7 +81,7 @@ window.addEventListener("agent-load", ev => {
     });
 
     const updateIndex = (entity) => getIndex().then(indexEntity => {
-        const index = indexEntity.response.status != "200" ?
+        const index = +indexEntity.response.status !== 200 ?
                   createIndex() : indexEntity.html;
         //console.log(indexEntity.html.documentElement.outerHTML);
         return [indexEntity, index, toArticle(index, entity)];
@@ -99,7 +99,7 @@ window.addEventListener("agent-load", ev => {
     const post = (ev) => {
         const request = ev.detail.request;
         putToOrb(request).then(updateIndex).then(
-            location => ev.detail.respond("201", {location: location}, "")
+            location => ev.detail.respond("201", {location}, "")
         ).catch(err => ev.detail.respond("400", {
             "content-type": "text/html;charset=utf-8"
         }, `something wrong ... ${"\n\n"}${err}`));
@@ -109,6 +109,7 @@ window.addEventListener("agent-load", ev => {
         const sibling = getBack ? "nextSibling" : "previousSibling";
         const slice = [];
         const append = getBack ? v => slice.push(v) : v => slice.unshift(v);
+        //console.log(pivot);
         for (let p = pivot, i = 0; p && i < max; p = p[sibling], i++) {
             append(p);
         }
@@ -120,16 +121,20 @@ window.addEventListener("agent-load", ev => {
         const pivot = index.html.getElementById(query.id);
         const links = index.html.getElementById("links");
         switch (query.on) {
-        case "refresh":
+        case "refresh": {
             const updated = activitySlice(pivot, NUM + 1, false);
             return updated.slice(0, -1);
-        case "backward":
+        }
+        case "backward": {
             const past = activitySlice(pivot, NUM + 1, true);
             return past.slice(1);
+        }
         default:
-            if (pivot) return resolveOrb(query.id).then(
-                uri => anatta.engine.link({href: uri}).get()
-            ).then(entity => [entity.html.querySelector(".link")]);
+            if (pivot) {
+                return resolveOrb(query.id).then(
+                    uri => anatta.engine.link({href: uri}).get()
+                ).then(entity => [entity.html.querySelector(".link")]);
+            }
             return activitySlice(links.firstChild, NUM, true);
         }
     });
@@ -138,7 +143,9 @@ window.addEventListener("agent-load", ev => {
         const id = elem ? elem.id : location.query.id;
         const search = id ? `?on=${on}&id=${id}` : "";
         const obj = Object.create(location, {search: {value: search}});
-        return url.format(obj);
+        const r = url.format(obj);
+        //console.log("[formatUri]", r);
+        return r;
     };
     
     const formatDocument = (activities, location) => {
@@ -147,15 +154,19 @@ window.addEventListener("agent-load", ev => {
         activities.forEach(
             status => div.appendChild(doc.importNode(status, true)));
         doc.body.appendChild(div);
-
+        //console.log(activities.length, div.outerHTML);
+        
         const refresh = doc.createElement("link");
         refresh.rel = "refresh";
-        refresh.href = formatUri(location, "refresh", div.firstChild);
+        refresh.setAttribute(
+            "href", formatUri(location, "refresh", div.firstChild));
         doc.head.appendChild(refresh);
+        //console.log("[formatDocument]", refresh.outerHTML);
 
         const backward = doc.createElement("link");
         backward.rel = "backward";
-        backward.href = formatUri(location, "backward", div.lastChild);
+        backward.setAttribute(
+            "href", formatUri(location, "backward", div.lastChild));
         doc.head.appendChild(backward);
 
         return doc;

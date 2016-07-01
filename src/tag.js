@@ -1,3 +1,4 @@
+/*global anatta, Streamer*/
 "use strict";
 window.addEventListener("agent-load", ev => {
     const cacheBase =
@@ -80,7 +81,7 @@ window.addEventListener("agent-load", ev => {
         const cacheLink = anatta.engine.link({href: cacheUri});
         return cacheLink.get().then(cache => {
             const status = cache.response.status;
-            return status == "200" ? cache.html : createCache(tag);
+            return +status === 200 ? cache.html : createCache(tag);
         }).then(cache => {
             const id = toID(
                 "link", activity.querySelector(".src").getAttribute("href"));
@@ -91,15 +92,14 @@ window.addEventListener("agent-load", ev => {
                     links.insertBefore(article, links.firstChild);
                     return [cache, true];
                 });
-            } else {
-                return updateArticle(article, activity).then(updated => {
-                    if (updated) {
-                        links.removeChild(article);
-                        links.insertBefore(article, links.firstChild);
-                    }
-                    return [cache, updated];
-                });
             }
+            return updateArticle(article, activity).then(updated => {
+                if (updated) {
+                    links.removeChild(article);
+                    links.insertBefore(article, links.firstChild);
+                }
+                return [cache, updated];
+            });
         }).then(a => Promise.all(a)).then(([cache, updated]) => {
             if (!updated) return null;
             return cacheLink.put({
@@ -110,7 +110,7 @@ window.addEventListener("agent-load", ev => {
     });
 
     const createCache = (tag) => {
-        const title = `tag: ${tag}`; 
+        const title = `tag: ${tag}`;
         const doc = document.implementation.createHTMLDocument(title);
         const cache = doc.importNode(cacheTemplate, true);
         const cacheTitle = cache.querySelector("h1");
@@ -125,14 +125,13 @@ window.addEventListener("agent-load", ev => {
         return tagTexts.map(tag => {
             const a = doc.createElement("a");
             a.textContent = tag;
-            a.href = `${base}${tag}`;
+            a.setAttribute("href", `${base}${tag}`);
             return a.outerHTML;
         }).join(", ");
     };
 
     const createArticle = (cache, activity) => {
         const uri = activity.querySelector(".src").getAttribute("href");
-        const tags = activity.querySelector(".tags");
         return getConf().then(conf => {
             const tagBase =
                       conf.first({rel: "tagBase"}).html.getAttribute("href");
@@ -209,7 +208,7 @@ window.addEventListener("agent-load", ev => {
         })));
     
     const createIndex = () => {
-        const title = "tag index"; 
+        const title = "tag index";
         const doc = document.implementation.createHTMLDocument(title);
         const index = doc.importNode(indexTemplate, true);
         doc.body.innerHTML = index.innerHTML;
@@ -217,7 +216,7 @@ window.addEventListener("agent-load", ev => {
     };
 
     const createElem = (index, tag) => {
-        const uriObj = Object.create(
+        const uriObj = Object.createOA(
             url.parse(cacheBase, true, true),
             {query: {value: {or: tag}}});
         const obj = {
@@ -237,14 +236,14 @@ window.addEventListener("agent-load", ev => {
 
     const mergeEntities = (tags, entities, intersection) => {
         const activeEntities =
-                  entities.filter(entity => entity.response.status == "200");
+                  entities.filter(entity => +entity.response.status === 200);
         const base = activeEntities.length > 0 ? activeEntities[0] : null;
         const byId = {};
         activeEntities.forEach(entity => {
             const links = entity.html.querySelectorAll(".link");
-            Array.from(links).forEach(
-                link =>
-                    byId[link.id] = [].concat.apply([link], byId[link.id]));
+            Array.from(links).forEach(link => {
+                byId[link.id] = [link].concat(...byId[link.id]);
+            });
         });
         const articles = {};
         Object.keys(byId).forEach(id => {
@@ -255,7 +254,7 @@ window.addEventListener("agent-load", ev => {
                 getTagAnchorHTMLs(link, ".tag > a")), []);
             const byDate = byId[id].map(link => ({
                 date: new Date(link.querySelector(".updated").textContent),
-                link: link
+                link
             })).sort((a, b) => a.date - b.date);
             const latest = byDate[byDate.length - 1];
             const key = [latest.date.getTime(), id];
@@ -284,7 +283,7 @@ window.addEventListener("agent-load", ev => {
     const getIndex = () => resolveOrb(cacheIndex).then(
         indexUri => anatta.engine.link({href: indexUri}).get()
     ).then(
-        entity => entity.response.status == "200" ? entity.html : createIndex()
+        entity => +entity.response.status === 200 ? entity.html : createIndex()
     );
 
     const get = (ev) => {
@@ -317,7 +316,7 @@ window.addEventListener("agent-load", ev => {
     window.addEventListener("agent-access", ev => {
         ev.detail.accept();
         refresh().then(streamer => {
-            if (ev.detail.request.method == "GET") {
+            if (ev.detail.request.method === "GET") {
                 return get(ev);
             }
             return ev.detail.respond("405", {allow: "GET"}, "");
