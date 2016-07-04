@@ -102,10 +102,10 @@ window.Streamer = (function build() {
         },
         insert: (s, article, getter) => {
             //console.log("[updates.intert]", article.id);
-            //TBD: id must be escaped in selector: ".", ":", ...
-            if (s.entries.querySelectorAll(`#${article.id}`).length !== 0) {
-                return false;
-            }
+            const aid = Array.from(article.id, ch => `\\${
+                ch.charCodeAt(0).toString(16)}`).join("");
+            //console.log("[updates.insert]", aid);
+            if (s.entries.querySelector(`#${aid}`)) return false;
             const pivot = getter(s.entries);
             const doc = s.entries.ownerDocument;
             s.entries.insertBefore(doc.importNode(article, true), pivot);

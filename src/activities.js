@@ -42,7 +42,8 @@ window.addEventListener("agent-load", ev => {
 
     //NOTE: it should not include "." because of bad `querySelector` id
     const generateID = () =>
-              `activity-${(Math.random() * 0x100000000000000).toString(16)}`;
+              `activity-${(Math.random() * 0x100000000).toString(16)}`;
+              //`activity-${(Math.random() * 0x100000000000000).toString(16)}`;
 
     const putToOrb = (request) => {
         const id = generateID();
