@@ -2,12 +2,12 @@
 
 "Potluck" is a name of memo sharing system for URIs like reddit.
 This project is an implementation of  the system with 
-[anata-engine](https://github.com/anatta-project/anatta-engine).
+[anata-engine](https://github.com/bunsanweb/anatta-engine).
 
 ## Setup
 
 ```bash
-$ git clone https://github.com/anatta-project/anatta-engine-potluck.git
+$ git clone https://github.com/bunsanweb/anatta-engine-potluck.git
 $ cd anatta-engine-potluck
 $ npm install
 ```
@@ -26,7 +26,7 @@ $ PORT=8080 ORB_URI='mongodb://localhost:27017/#potluck' npm start
 
 The `ORB_URI` is switching backend storage, defined at:
 
-- https://github.com/anatta-project/anatta-engine/blob/master/engine/orb/core.js
+- https://github.com/bunsanweb/anatta-engine/blob/master/engine/orb/core.js
 
 ## Application Architecture
 

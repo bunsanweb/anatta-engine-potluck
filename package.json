@@ -7,9 +7,11 @@
         "eslint": "eslint .",
         "test": "mocha"
     },
-    "engines": {"node": ">=6.0"},
+    "engines": {
+        "node": ">=6.0"
+    },
     "dependencies": {
-        "anatta-engine": "https://github.com/anatta-project/anatta-engine.git"
+        "anatta-engine": "bunsanweb/anatta-engine"
     },
     "devDependencies": {
         "eslint": "*",
